@@ -2,6 +2,7 @@
 from aws_cdk import (Duration, RemovalPolicy, Stack, aws_apigateway as apigateway,
                      aws_dynamodb as dynamodb, aws_iam as iam, aws_lambda as lambda_,
                      aws_logs as logs, aws_s3 as s3)
+from aws_cdk.aws_lambda_python_alpha import PythonFunction
 from constructs import Construct
 
 from aws_cognito_identitypool_alpha import IdentityPool
@@ -64,11 +65,12 @@ class BackendStack(Stack):
             **common_lambda_kwargs,
         )
 
-        generate_function = lambda_.Function(
+        render_function = PythonFunction(
             self,
-            "ResumeGenerateFunction",
-            handler="app.handler",
-            code=lambda_.Code.from_asset("lambdas/generate_handler"),
+            "ResumeRenderFunction",
+            entry="lambdas/generate_handler",
+            index="app.py",
+            handler="handler",
             timeout=Duration.minutes(15),
             memory_size=2048,
             **common_lambda_kwargs,
@@ -83,11 +85,11 @@ class BackendStack(Stack):
         )
 
         bucket.grant_read_write(upload_function)
-        bucket.grant_read_write(generate_function)
+        bucket.grant_read_write(render_function)
         bucket.grant_read(download_function)
 
         table.grant_read_write_data(upload_function)
-        table.grant_read_write_data(generate_function)
+        table.grant_read_write_data(render_function)
         table.grant_read_data(download_function)
 
         bedrock_policy = iam.PolicyStatement(
@@ -98,7 +100,7 @@ class BackendStack(Stack):
             ],
             resources=["*"],
         )
-        generate_function.add_to_role_policy(bedrock_policy)
+        render_function.add_to_role_policy(bedrock_policy)
 
         comprehend_policy = iam.PolicyStatement(
             effect=iam.Effect.ALLOW,
@@ -107,7 +109,7 @@ class BackendStack(Stack):
             ],
             resources=["*"],
         )
-        generate_function.add_to_role_policy(comprehend_policy)
+        render_function.add_to_role_policy(comprehend_policy)
 
         s3_presign_policy = iam.PolicyStatement(
             effect=iam.Effect.ALLOW,
@@ -128,14 +130,14 @@ class BackendStack(Stack):
         )
 
         upload_integration = apigateway.LambdaIntegration(upload_function)
-        generate_integration = apigateway.LambdaIntegration(generate_function)
+        render_integration = apigateway.LambdaIntegration(render_function)
         download_integration = apigateway.LambdaIntegration(download_function)
 
         uploads = api.root.add_resource("upload")
         uploads.add_method("POST", upload_integration)
 
         generate = api.root.add_resource("generate")
-        generate.add_method("POST", generate_integration)
+        generate.add_method("POST", render_integration)
 
         downloads = api.root.add_resource("download")
         downloads.add_method("GET", download_integration)
