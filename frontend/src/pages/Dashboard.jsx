@@ -1,0 +1,142 @@
+import React, { useMemo, useState } from 'react';
+import axios from 'axios';
+import UploadForm from '../components/UploadForm.jsx';
+import ResumeList from '../components/ResumeList.jsx';
+import GenerateButton from '../components/GenerateButton.jsx';
+
+const Dashboard = ({ apiUrl }) => {
+  const [tenantId] = useState('demo-tenant');
+  const [uploads, setUploads] = useState({ approved: [], template: [], jobs: [] });
+  const [selections, setSelections] = useState({ resume: null, template: null, job: null });
+  const [jobDescription, setJobDescription] = useState('');
+  const [generatedOutputs, setGeneratedOutputs] = useState([]);
+
+  const handleUploadComplete = (item) => {
+    setUploads((prev) => ({
+      ...prev,
+      [item.category]: [...(prev[item.category] ?? []), item],
+    }));
+  };
+
+  const handleGenerated = async (result) => {
+    setGeneratedOutputs((prev) => [
+      {
+        ...result,
+        createdAt: new Date().toISOString(),
+      },
+      ...prev,
+    ]);
+
+    const [docxUrl, pdfUrl] = await Promise.all([
+      axios.get(`${apiUrl}download`, { params: { key: result.docxKey } }),
+      axios.get(`${apiUrl}download`, { params: { key: result.pdfKey } }),
+    ]);
+
+    setGeneratedOutputs((prev) => [
+      {
+        ...result,
+        createdAt: new Date().toISOString(),
+        docxUrl: docxUrl.data.url,
+        pdfUrl: pdfUrl.data.url,
+      },
+      ...prev.filter((item) => item.outputId !== result.outputId),
+    ]);
+  };
+
+  const preparedSelections = useMemo(() => ({
+    ...selections,
+    job: jobDescription ? { content: jobDescription } : selections.job,
+  }), [selections, jobDescription]);
+
+  return (
+    <main className="mx-auto max-w-6xl space-y-10 p-6">
+      <header className="space-y-3">
+        <h1 className="text-3xl font-bold text-white">Resume Tailoring Dashboard</h1>
+        <p className="text-slate-400">
+          Upload approved resumes and templates, provide job descriptions, then generate tailored outputs ready for download.
+        </p>
+      </header>
+
+      <section className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <UploadForm apiUrl={apiUrl} tenantId={tenantId} onUploadComplete={handleUploadComplete} />
+        <div className="rounded-lg bg-slate-900 p-6 shadow md:col-span-1 lg:col-span-2">
+          <label htmlFor="job-description" className="block text-sm font-medium text-slate-300">
+            Job Description
+          </label>
+          <textarea
+            id="job-description"
+            rows={8}
+            value={jobDescription}
+            onChange={(event) => setJobDescription(event.target.value)}
+            className="mt-2 w-full rounded border border-slate-700 bg-slate-800 p-3 text-sm text-slate-100"
+            placeholder="Paste the job description here"
+          />
+          <p className="mt-2 text-xs text-slate-500">
+            You can also upload job descriptions as files and select them below.
+          </p>
+        </div>
+      </section>
+
+      <section className="grid gap-6 md:grid-cols-3">
+        <ResumeList
+          title="Approved Resumes"
+          items={uploads.approved}
+          onSelect={(item) => setSelections((prev) => ({ ...prev, resume: item }))}
+        />
+        <ResumeList
+          title="Templates"
+          items={uploads.template}
+          onSelect={(item) => setSelections((prev) => ({ ...prev, template: item }))}
+        />
+        <ResumeList
+          title="Job Descriptions"
+          items={uploads.jobs}
+          onSelect={(item) => setSelections((prev) => ({ ...prev, job: item }))}
+        />
+      </section>
+
+      <GenerateButton apiUrl={apiUrl} tenantId={tenantId} selections={preparedSelections} onGenerated={handleGenerated} />
+
+      <section className="space-y-4">
+        <h2 className="text-2xl font-semibold text-white">Generated Outputs</h2>
+        {generatedOutputs.length === 0 ? (
+          <p className="text-sm text-slate-400">No tailored resumes generated yet.</p>
+        ) : (
+          <ul className="space-y-3">
+            {generatedOutputs.map((output) => (
+              <li
+                key={output.outputId}
+                className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-800 bg-slate-900 p-4 text-sm text-slate-100"
+              >
+                <div>
+                  <p className="font-semibold">Output {output.outputId}</p>
+                  <p className="text-xs text-slate-400">Generated {output.createdAt}</p>
+                </div>
+                <div className="flex gap-2">
+                  {output.docxUrl && (
+                    <a
+                      href={output.docxUrl}
+                      className="rounded bg-emerald-500 px-3 py-2 text-xs font-semibold text-slate-900 hover:bg-emerald-400"
+                    >
+                      Download DOCX
+                    </a>
+                  )}
+                  {output.pdfUrl && (
+                    <a
+                      href={output.pdfUrl}
+                      className="rounded bg-indigo-500 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-400"
+                    >
+                      Download PDF
+                    </a>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+    </main>
+  );
+};
+
+export default Dashboard;
