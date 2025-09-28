@@ -1,0 +1,196 @@
+{
+  "Comment": "Resume tailoring pipeline orchestrating parse, generation, validation, render, and persistence steps.",
+  "StartAt": "ParseResume",
+  "States": {
+    "ParseResume": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::aws-sdk:textract:analyzeDocument",
+      "Parameters": {
+        "Document": {
+          "S3Object": {
+            "Bucket.$": "$.bucketName",
+            "Name.$": "$.resumeKey"
+          }
+        },
+        "FeatureTypes": ["TABLES", "FORMS"]
+      },
+      "ResultPath": "$.parsedResume",
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "ResultPath": "$.error",
+          "Next": "MarkJobFailed"
+        }
+      ],
+      "Next": "RunComprehend"
+    },
+    "RunComprehend": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.options.runComprehend",
+          "BooleanEquals": true,
+          "Next": "DetectPII"
+        }
+      ],
+      "Default": "GenerateDraft"
+    },
+    "DetectPII": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::aws-sdk:comprehend:detectPiiEntities",
+      "Parameters": {
+        "Text.$": "$.jobDescription",
+        "LanguageCode": "en"
+      },
+      "ResultPath": "$.piiAnalysis",
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "ResultPath": "$.error",
+          "Next": "MarkJobFailed"
+        }
+      ],
+      "Next": "GenerateDraft"
+    },
+    "GenerateDraft": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${GenerateDraftFunction}",
+        "Payload": {
+          "tenantId.$": "$.tenantId",
+          "jobId.$": "$.jobId",
+          "resumeKey.$": "$.resumeKey",
+          "jobDescriptionKey.$": "$.jobDescriptionKey",
+          "jobDescription.$": "$.jobDescription",
+          "templateKey.$": "$.templateKey",
+          "parsedResume.$": "$.parsedResume",
+          "piiAnalysis.$": "$.piiAnalysis",
+          "options.$": "$.options"
+        }
+      },
+      "ResultSelector": {
+        "draft.$": "$.Payload"
+      },
+      "ResultPath": "$.draft",
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "ResultPath": "$.error",
+          "Next": "MarkJobFailed"
+        }
+      ],
+      "Next": "ValidateDraft"
+    },
+    "ValidateDraft": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${ValidateFunction}",
+        "Payload": {
+          "tenantId.$": "$.tenantId",
+          "jobId.$": "$.jobId",
+          "draft.$": "$.draft",
+          "parsedResume.$": "$.parsedResume",
+          "jobDescription.$": "$.jobDescription"
+        }
+      },
+      "ResultSelector": {
+        "validation.$": "$.Payload"
+      },
+      "ResultPath": "$.validation",
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "ResultPath": "$.error",
+          "Next": "MarkJobFailed"
+        }
+      ],
+      "Next": "RenderArtifacts"
+    },
+    "RenderArtifacts": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${RenderFunction}",
+        "Payload": {
+          "tenantId.$": "$.tenantId",
+          "jobId.$": "$.jobId",
+          "draft.$": "$.draft",
+          "templateKey.$": "$.templateKey"
+        }
+      },
+      "ResultSelector": {
+        "artifacts.$": "$.Payload"
+      },
+      "ResultPath": "$.artifacts",
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "ResultPath": "$.error",
+          "Next": "MarkJobFailed"
+        }
+      ],
+      "Next": "PersistJobMetadata"
+    },
+    "PersistJobMetadata": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::aws-sdk:dynamodb:updateItem",
+      "Parameters": {
+        "TableName": "${TableName}",
+        "Key": {
+          "pk": {"S.$": "States.Format('TENANT#{}', $.tenantId)"},
+          "sk": {"S.$": "States.Format('JOB#{}', $.jobId)"}
+        },
+        "UpdateExpression": "SET #status = :status, #docx = :docx, #pdf = :pdf, #completedAt = :completedAt, #validation = :validation",
+        "ExpressionAttributeNames": {
+          "#status": "status",
+          "#docx": "docxKey",
+          "#pdf": "pdfKey",
+          "#completedAt": "completedAt",
+          "#validation": "validationReport"
+        },
+        "ExpressionAttributeValues": {
+          ":status": {"S": "COMPLETED"},
+          ":docx": {"S.$": "$.artifacts.docxKey"},
+          ":pdf": {"S.$": "$.artifacts.pdfKey"},
+          ":completedAt": {"S.$": "$.artifacts.completedAt"},
+          ":validation": {"S.$": "States.JsonToString($.validation)"}
+        }
+      },
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "ResultPath": "$.error",
+          "Next": "MarkJobFailed"
+        }
+      ],
+      "End": true
+    },
+    "MarkJobFailed": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::aws-sdk:dynamodb:updateItem",
+      "Parameters": {
+        "TableName": "${TableName}",
+        "Key": {
+          "pk": {"S.$": "States.Format('TENANT#{}', $.tenantId)"},
+          "sk": {"S.$": "States.Format('JOB#{}', $.jobId)"}
+        },
+        "UpdateExpression": "SET #status = :status, #error = :error",
+        "ExpressionAttributeNames": {
+          "#status": "status",
+          "#error": "error"
+        },
+        "ExpressionAttributeValues": {
+          ":status": {"S": "FAILED"},
+          ":error": {"S.$": "States.JsonToString($.error)"}
+        }
+      },
+      "Next": "FailState"
+    },
+    "FailState": {
+      "Type": "Fail",
+      "Error": "ResumeTailoringFailed"
+    }
+  }
+}
