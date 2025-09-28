@@ -6,10 +6,9 @@ from aws_cdk import aws_cloudfront_origins as origins
 from aws_cdk import aws_iam as iam
 from aws_cdk import aws_s3 as s3
 from aws_cdk import aws_s3_deployment as s3deploy
-from constructs import Construct
-
-from aws_cognito_identitypool_alpha import IdentityPool
 from aws_cdk import aws_cognito as cognito
+from aws_cdk.aws_cognito_identitypool_alpha import IdentityPool
+from constructs import Construct
 
 
 class FrontendStack(Stack):
@@ -43,7 +42,11 @@ class FrontendStack(Stack):
             iam.PolicyStatement(
                 actions=["s3:GetObject"],
                 resources=[site_bucket.arn_for_objects("*")],
-                principals=[iam.CanonicalUserPrincipal(oai.cloud_front_origin_access_identity_s3_canonical_user_id)],
+                principals=[
+                    iam.CanonicalUserPrincipal(
+                        oai.cloud_front_origin_access_identity_s3_canonical_user_id
+                    )
+                ],
             )
         )
 

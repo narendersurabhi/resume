@@ -1,12 +1,12 @@
 """Authentication stack providing Cognito resources."""
 from aws_cdk import Stack, CfnOutput
 from aws_cdk import aws_cognito as cognito
-from constructs import Construct
-from aws_cognito_identitypool_alpha import (
+from aws_cdk.aws_cognito_identitypool_alpha import (
     IdentityPool,
     IdentityPoolAuthenticationProviders,
     UserPoolAuthenticationProvider,
 )
+from constructs import Construct
 
 
 class AuthStack(Stack):

@@ -1,11 +1,18 @@
 """Backend infrastructure stack for the resume tailoring platform."""
-from aws_cdk import (Duration, RemovalPolicy, Stack, aws_apigateway as apigateway,
-                     aws_dynamodb as dynamodb, aws_iam as iam, aws_lambda as lambda_,
-                     aws_logs as logs, aws_s3 as s3)
+from aws_cdk import (
+    Duration,
+    RemovalPolicy,
+    Stack,
+    aws_apigateway as apigateway,
+    aws_dynamodb as dynamodb,
+    aws_iam as iam,
+    aws_lambda as lambda_,
+    aws_logs as logs,
+    aws_s3 as s3,
+    aws_cognito as cognito,
+)
+from aws_cdk.aws_cognito_identitypool_alpha import IdentityPool
 from constructs import Construct
-
-from aws_cognito_identitypool_alpha import IdentityPool
-from aws_cdk import aws_cognito as cognito
 
 
 class BackendStack(Stack):
@@ -22,6 +29,7 @@ class BackendStack(Stack):
     ) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
+        # Storage
         bucket = s3.Bucket(
             self,
             "ResumeStorageBucket",
@@ -41,6 +49,7 @@ class BackendStack(Stack):
             removal_policy=RemovalPolicy.RETAIN,
         )
 
+        # Shared environment for Lambdas
         lambda_env = {
             "BUCKET_NAME": bucket.bucket_name,
             "TABLE_NAME": table.table_name,
@@ -48,40 +57,46 @@ class BackendStack(Stack):
             "OUTPUT_PREFIX": "generated",
         }
 
-        common_lambda_kwargs = {
-            "runtime": lambda_.Runtime.PYTHON_3_12,
-            "memory_size": 1024,
-            "timeout": Duration.minutes(5),
-            "log_retention": logs.RetentionDays.ONE_MONTH,
-            "environment": lambda_env,
-        }
-
+        # Upload Lambda
         upload_function = lambda_.Function(
             self,
             "ResumeUploadFunction",
+            runtime=lambda_.Runtime.PYTHON_3_12,
             handler="app.handler",
             code=lambda_.Code.from_asset("lambdas/upload_handler"),
-            **common_lambda_kwargs,
+            memory_size=1024,
+            timeout=Duration.minutes(5),
+            log_retention=logs.RetentionDays.ONE_MONTH,
+            environment=lambda_env,
         )
 
+        # Generate Lambda (heavier workload)
         generate_function = lambda_.Function(
             self,
             "ResumeGenerateFunction",
+            runtime=lambda_.Runtime.PYTHON_3_12,
             handler="app.handler",
             code=lambda_.Code.from_asset("lambdas/generate_handler"),
-            timeout=Duration.minutes(15),
-            memory_size=2048,
-            **common_lambda_kwargs,
+            memory_size=2048,  # override
+            timeout=Duration.minutes(15),  # override
+            log_retention=logs.RetentionDays.ONE_MONTH,
+            environment=lambda_env,
         )
 
+        # Download Lambda
         download_function = lambda_.Function(
             self,
             "ResumeDownloadFunction",
+            runtime=lambda_.Runtime.PYTHON_3_12,
             handler="app.handler",
             code=lambda_.Code.from_asset("lambdas/download_handler"),
-            **common_lambda_kwargs,
+            memory_size=1024,
+            timeout=Duration.minutes(5),
+            log_retention=logs.RetentionDays.ONE_MONTH,
+            environment=lambda_env,
         )
 
+        # Grants
         bucket.grant_read_write(upload_function)
         bucket.grant_read_write(generate_function)
         bucket.grant_read(download_function)
@@ -90,32 +105,29 @@ class BackendStack(Stack):
         table.grant_read_write_data(generate_function)
         table.grant_read_data(download_function)
 
-        bedrock_policy = iam.PolicyStatement(
-            effect=iam.Effect.ALLOW,
-            actions=[
-                "bedrock:InvokeModel",
-                "bedrock:InvokeModelWithResponseStream",
-            ],
-            resources=["*"],
+        # IAM policies
+        generate_function.add_to_role_policy(
+            iam.PolicyStatement(
+                actions=["bedrock:InvokeModel", "bedrock:InvokeModelWithResponseStream"],
+                resources=["*"],
+            )
         )
-        generate_function.add_to_role_policy(bedrock_policy)
 
-        comprehend_policy = iam.PolicyStatement(
-            effect=iam.Effect.ALLOW,
-            actions=[
-                "comprehend:ContainsPiiEntities",
-            ],
-            resources=["*"],
+        generate_function.add_to_role_policy(
+            iam.PolicyStatement(
+                actions=["comprehend:ContainsPiiEntities"],
+                resources=["*"],
+            )
         )
-        generate_function.add_to_role_policy(comprehend_policy)
 
-        s3_presign_policy = iam.PolicyStatement(
-            effect=iam.Effect.ALLOW,
-            actions=["s3:GetObject"],
-            resources=[bucket.arn_for_objects("*")],
+        download_function.add_to_role_policy(
+            iam.PolicyStatement(
+                actions=["s3:GetObject"],
+                resources=[bucket.arn_for_objects("*")],
+            )
         )
-        download_function.add_to_role_policy(s3_presign_policy)
 
+        # API Gateway
         api = apigateway.RestApi(
             self,
             "ResumeApi",
@@ -127,18 +139,9 @@ class BackendStack(Stack):
             ),
         )
 
-        upload_integration = apigateway.LambdaIntegration(upload_function)
-        generate_integration = apigateway.LambdaIntegration(generate_function)
-        download_integration = apigateway.LambdaIntegration(download_function)
-
-        uploads = api.root.add_resource("upload")
-        uploads.add_method("POST", upload_integration)
-
-        generate = api.root.add_resource("generate")
-        generate.add_method("POST", generate_integration)
-
-        downloads = api.root.add_resource("download")
-        downloads.add_method("GET", download_integration)
+        api.root.add_resource("upload").add_method("POST", apigateway.LambdaIntegration(upload_function))
+        api.root.add_resource("generate").add_method("POST", apigateway.LambdaIntegration(generate_function))
+        api.root.add_resource("download").add_method("GET", apigateway.LambdaIntegration(download_function))
 
         self.api_url = api.url
         self.bucket = bucket
