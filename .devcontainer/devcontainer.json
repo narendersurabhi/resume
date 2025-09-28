@@ -1,0 +1,16 @@
+{
+  "name": "resume-dev",
+  "image": "mcr.microsoft.com/devcontainers/python:3.11",
+
+  "features": {
+    "ghcr.io/devcontainers/features/aws-cli:1": {}
+  },
+
+  "env": {
+    "AWS_ACCESS_KEY_ID": "${{ secrets.AWS_ACCESS_KEY_ID }}",
+    "AWS_SECRET_ACCESS_KEY": "${{ secrets.AWS_SECRET_ACCESS_KEY }}",
+    "AWS_DEFAULT_REGION": "us-east-1"
+  },
+
+  "postCreateCommand": "mkdir -p ~/.aws && printf '[resume-admin]\naws_access_key_id=%s\naws_secret_access_key=%s\nregion=%s\n' \"$AWS_ACCESS_KEY_ID\" \"$AWS_SECRET_ACCESS_KEY\" \"$AWS_DEFAULT_REGION\" > ~/.aws/credentials"
+}
