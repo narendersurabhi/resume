@@ -32,6 +32,46 @@ class BackendStack(Stack):
             encryption=s3.BucketEncryption.S3_MANAGED,
         )
 
+        stack = Stack.of(self)
+        textract_principal = iam.ServicePrincipal("textract.amazonaws.com")
+        textract_access_prefixes = [
+            bucket.arn_for_objects("*/approved/*"),
+            bucket.arn_for_objects("*/jobs/*"),
+            bucket.arn_for_objects("*/template/*"),
+        ]
+
+        bucket.add_to_resource_policy(
+            iam.PolicyStatement(
+                sid="AllowTextractReadTenantObjects",
+                effect=iam.Effect.ALLOW,
+                principals=[textract_principal],
+                actions=["s3:GetObject"],
+                resources=textract_access_prefixes,
+                conditions={
+                    "StringEquals": {"aws:SourceAccount": stack.account},
+                },
+            )
+        )
+
+        if bucket.encryption_key:
+            bucket.encryption_key.add_to_resource_policy(
+                iam.PolicyStatement(
+                    sid="AllowTextractUseOfKey",
+                    effect=iam.Effect.ALLOW,
+                    principals=[textract_principal],
+                    actions=["kms:Decrypt", "kms:GenerateDataKey"],
+                    resources=["*"],
+                    conditions={
+                        "StringEquals": {"aws:SourceAccount": stack.account},
+                        "ArnLike": {
+                            "aws:SourceArn": stack.format_arn(
+                                service="textract", resource="*"
+                            )
+                        },
+                    },
+                )
+            )
+
         table = dynamodb.Table(
             self,
             "ResumeMetadataTable",
