@@ -1,0 +1,8 @@
+{
+  "apiUrl": "http://localhost:3000/",
+  "userPoolId": "local-user-pool",
+  "userPoolClientId": "local-client",
+  "identityPoolId": "local-identity",
+  "region": "us-east-1",
+  "bucketName": "local-bucket"
+}
