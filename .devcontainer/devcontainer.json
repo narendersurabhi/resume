@@ -10,9 +10,13 @@
   },
 
   "env": {
+
+    "ACCOUNT_ID": "${{ secrets.ACCOUNT_ID }}",
+    "REGION": "${{ secrets.REGION }}",    
+
     "AWS_ACCESS_KEY_ID": "${{ secrets.AWS_ACCESS_KEY_ID }}",
     "AWS_SECRET_ACCESS_KEY": "${{ secrets.AWS_SECRET_ACCESS_KEY }}",
-    "AWS_DEFAULT_REGION": "us-east-1"
+    "AWS_DEFAULT_REGION": "us-east-2"
   },
 
   "postCreateCommand": "mkdir -p ~/.aws && printf '[resume-admin]\naws_access_key_id=%s\naws_secret_access_key=%s\nregion=%s\n' \"$AWS_ACCESS_KEY_ID\" \"$AWS_SECRET_ACCESS_KEY\" \"$AWS_DEFAULT_REGION\" > ~/.aws/credentials && python3.11 -m venv .venv && echo 'source .venv/bin/activate' >> ~/.bashrc && npm install -g aws-cdk"
