@@ -137,6 +137,12 @@ def handler(event, context):
             action="lambda:InvokeFunction"
         )
 
+        config_writer.add_permission(
+            "AllowCloudFormationInvoke",
+            principal=iam.ServicePrincipal("cloudformation.amazonaws.com"),
+            action="lambda:InvokeFunction"
+        )
+
 
         # site_bucket.grant_read_write(config_writer)
         # config_writer.grant_invoke(iam.ServicePrincipal("lambda.amazonaws.com"))
