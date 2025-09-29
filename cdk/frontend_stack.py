@@ -28,7 +28,7 @@ class FrontendStack(Stack):
         site_bucket = s3.Bucket(
             self,
             "ResumeFrontendBucket",
-            # website_index_document="index.html",   ❌ REMOVE THIS
+            website_index_document="index.html",
             public_read_access=False,
             block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
             removal_policy=RemovalPolicy.DESTROY,
@@ -116,39 +116,24 @@ def handler(event, context):
             log_retention=logs.RetentionDays.ONE_WEEK,
         )
 
-        site_bucket.grant_put(config_writer)
+        # Allow Lambda to write into the bucket
+        site_bucket.grant_read_write(config_writer)
 
-        # Allow CloudFormation to invoke this Lambda
-        # config_writer.add_permission(
-        #     "AllowCloudFormationInvoke",
-        #     principal=iam.ServicePrincipal("cloudformation.amazonaws.com"),
-        #     action="lambda:InvokeFunction"
-        # )
-
-        # config_writer.grant_invoke(iam.ArnPrincipal(
-        #     f"arn:aws:iam::{self.account}:role/cdk-hnb659fds-cfn-exec-role-{self.account}-{self.region}"
-        # ))
-
-        # config_writer.grant_invoke(iam.AccountPrincipal(self.account))
-
-        config_writer.add_permission(
-            "AllowAllInvoke",
-            principal=iam.AnyPrincipal(),
-            action="lambda:InvokeFunction"
-        )
-
+        # ✅ Allow CloudFormation to invoke this Lambda
         config_writer.add_permission(
             "AllowCloudFormationInvoke",
             principal=iam.ServicePrincipal("cloudformation.amazonaws.com"),
-            action="lambda:InvokeFunction"
+            action="lambda:InvokeFunction",
         )
 
+        # ⚠️ Broad permission: allow *any* principal to invoke
+        config_writer.add_permission(
+            "AllowAllInvoke",
+            principal=iam.AnyPrincipal(),
+            action="lambda:InvokeFunction",
+        )
 
-        # site_bucket.grant_read_write(config_writer)
-        # config_writer.grant_invoke(iam.ServicePrincipal("lambda.amazonaws.com"))
-        # config_writer.grant_invoke(iam.ServicePrincipal("cloudformation.amazonaws.com"))
-
-        # --- Custom resource for lifecycle ---
+        # --- Custom resource to trigger Lambda on stack lifecycle ---
         cr.AwsCustomResource(
             self,
             "WriteConfigJson",

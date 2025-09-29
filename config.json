@@ -1,0 +1,8 @@
+{
+  "apiUrl": "https://8spd7duuh3.execute-api.us-east-2.amazonaws.com/prod/",
+  "userPoolId": "us-east-2_iK7YiFK5E",
+  "userPoolClientId": "4bga4egjq4rouibktre7hjg66f",
+  "identityPoolId": "us-east-2:fd2ed10c-0325-4018-8fad-b9ff958675cb",
+  "region": "us-east-2",
+  "bucketName": "resumefrontendstack-resumefrontendbucket1768d772-ckepziydhily"
+}
