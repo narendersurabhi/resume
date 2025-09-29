@@ -28,12 +28,11 @@ class FrontendStack(Stack):
         site_bucket = s3.Bucket(
             self,
             "ResumeFrontendBucket",
-            website_index_document="index.html",
+            # website_index_document="index.html",   ❌ REMOVE THIS
             public_read_access=False,
             block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
-            # 👇 keep bucket after stack deletion
-            removal_policy=RemovalPolicy.RETAIN,
-            auto_delete_objects=False,
+            removal_policy=RemovalPolicy.DESTROY,
+            auto_delete_objects=True,
             encryption=s3.BucketEncryption.S3_MANAGED,
         )
 
@@ -65,7 +64,7 @@ class FrontendStack(Stack):
         s3deploy.BucketDeployment(
             self,
             "ResumeFrontendDeployment",
-            sources=[s3deploy.Source.asset("frontend/build")],
+            sources=[s3deploy.Source.asset("frontend/dist")],
             destination_bucket=site_bucket,
             distribution=distribution,
             distribution_paths=["/*"],
@@ -120,11 +119,24 @@ def handler(event, context):
         site_bucket.grant_put(config_writer)
 
         # Allow CloudFormation to invoke this Lambda
+        # config_writer.add_permission(
+        #     "AllowCloudFormationInvoke",
+        #     principal=iam.ServicePrincipal("cloudformation.amazonaws.com"),
+        #     action="lambda:InvokeFunction"
+        # )
+
+        # config_writer.grant_invoke(iam.ArnPrincipal(
+        #     f"arn:aws:iam::{self.account}:role/cdk-hnb659fds-cfn-exec-role-{self.account}-{self.region}"
+        # ))
+
+        # config_writer.grant_invoke(iam.AccountPrincipal(self.account))
+
         config_writer.add_permission(
-            "AllowCloudFormationInvoke",
-            principal=iam.ServicePrincipal("cloudformation.amazonaws.com"),
+            "AllowAllInvoke",
+            principal=iam.AnyPrincipal(),
             action="lambda:InvokeFunction"
         )
+
 
         # site_bucket.grant_read_write(config_writer)
         # config_writer.grant_invoke(iam.ServicePrincipal("lambda.amazonaws.com"))
