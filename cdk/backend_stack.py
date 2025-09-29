@@ -13,20 +13,12 @@ from aws_cdk import (
 )
 from aws_cdk.aws_cognito_identitypool_alpha import IdentityPool
 from constructs import Construct
-
+from aws_cdk import CfnOutput
 
 class BackendStack(Stack):
     """Creates serverless backend resources including S3, DynamoDB, Lambda, and API Gateway."""
 
-    def __init__(
-        self,
-        scope: Construct,
-        construct_id: str,
-        *,
-        user_pool: cognito.UserPool,
-        identity_pool: IdentityPool,
-        **kwargs,
-    ) -> None:
+    def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
         # Storage
@@ -146,3 +138,9 @@ class BackendStack(Stack):
         self.api_url = api.url
         self.bucket = bucket
         self.table = table
+
+        # CfnOutput(self, "ApiUrl", value=self.api_url)
+        # CfnOutput(self, "StorageBucketName", value=bucket.bucket_name)
+        # CfnOutput(self, "MetadataTableName", value=table.table_name) 
+
+        CfnOutput(self, "ApiUrl", value=self.api_url, export_name="ResumeApiUrl")

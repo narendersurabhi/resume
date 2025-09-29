@@ -1,4 +1,3 @@
-"""Authentication stack providing Cognito resources."""
 from aws_cdk import Stack, CfnOutput
 from aws_cdk import aws_cognito as cognito
 from aws_cdk.aws_cognito_identitypool_alpha import (
@@ -10,8 +9,6 @@ from constructs import Construct
 
 
 class AuthStack(Stack):
-    """Creates Cognito User Pool and Identity Pool for authentication."""
-
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
@@ -49,6 +46,13 @@ class AuthStack(Stack):
             ),
         )
 
-        CfnOutput(self, "UserPoolId", value=self.user_pool.user_pool_id)
-        CfnOutput(self, "UserPoolClientId", value=self.user_pool_client.user_pool_client_id)
-        CfnOutput(self, "IdentityPoolId", value=self.identity_pool.identity_pool_id)
+        # 🔹 Export values
+        CfnOutput(self, "UserPoolId",
+                  value=self.user_pool.user_pool_id,
+                  export_name="ResumeUserPoolId")
+        CfnOutput(self, "UserPoolClientId",
+                  value=self.user_pool_client.user_pool_client_id,
+                  export_name="ResumeUserPoolClientId")
+        CfnOutput(self, "IdentityPoolId",
+                  value=self.identity_pool.identity_pool_id,
+                  export_name="ResumeIdentityPoolId")

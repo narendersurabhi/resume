@@ -5,6 +5,7 @@ ACCOUNT_ID="${ACCOUNT_ID:?ERROR: ACCOUNT_ID environment variable not set}"
 REGION="${REGION:?ERROR: REGION environment variable not set}"
 
 ACTION="${1:-}"
+FORCE="${2:-}"
 
 echo "Using ACCOUNT_ID=$ACCOUNT_ID REGION=$REGION"
 
@@ -31,39 +32,39 @@ case "$ACTION" in
     cd ..
 
     echo "=== Step 3: Bootstrap CDK environment (if needed) ==="
-    if ! aws cloudformation describe-stacks \
+    if aws cloudformation describe-stacks \
            --stack-name CDKToolkit \
            --region "$REGION" >/dev/null 2>&1; then
-        echo "Bootstrapping CDK in $ACCOUNT_ID/$REGION..."
-        cdk bootstrap --app "python3.11 cdk/app.py" aws://$ACCOUNT_ID/$REGION
+        echo "CDKToolkit stack already exists in $ACCOUNT_ID/$REGION. Skipping bootstrap."
     else
-        echo "CDK already bootstrapped in $ACCOUNT_ID/$REGION. Skipping."
+        echo "Bootstrapping CDK in $ACCOUNT_ID/$REGION..."
+        cdk bootstrap aws://$ACCOUNT_ID/$REGION \
+          --cloudformation-execution-policies arn:aws:iam::aws:policy/AdministratorAccess
     fi
 
     echo "=== Step 4: Deploy stacks ==="
-    cdk deploy --app "python3.11 cdk/app.py" --all
+    for stack in ResumeAuthStack ResumeBackendStack ResumeFrontendStack; do
+      if [ "$FORCE" == "--force" ]; then
+        echo "Forcing redeploy of $stack..."
+        cdk deploy --app "python3.11 -m cdk.app" "$stack"
+      else
+        if aws cloudformation describe-stacks \
+              --stack-name "$stack" \
+              --region "$REGION" >/dev/null 2>&1; then
+          echo "$stack already exists. Skipping."
+        else
+          echo "Deploying $stack..."
+          cdk deploy --app "python3.11 -m cdk.app" "$stack"
+        fi
+      fi
+    done
     ;;
 
   down)
     echo "=== Step 1: Destroy all deployed stacks ==="
-    cdk destroy --app "python3.11 cdk/app.py" --all --force
+    cdk destroy --app "python3.11 -m cdk.app" --all --force
 
-    echo "=== Step 2: Delete CDK bootstrap stack (CDKToolkit) ==="
-    if aws cloudformation describe-stacks \
-           --stack-name CDKToolkit \
-           --region "$REGION" >/dev/null 2>&1; then
-        echo "Deleting bootstrap stack CDKToolkit..."
-        aws cloudformation delete-stack \
-            --stack-name CDKToolkit \
-            --region "$REGION"
-        aws cloudformation wait stack-delete-complete \
-            --stack-name CDKToolkit \
-            --region "$REGION"
-        echo "Bootstrap stack deleted."
-    else
-        echo "No bootstrap stack found in $ACCOUNT_ID/$REGION. Skipping."
-    fi
-    echo "=== Cleanup complete ==="
+    echo "=== Step 2: Skipping deletion of CDKToolkit (keeps bootstrap bucket) ==="
     ;;
 
   status)
@@ -74,22 +75,58 @@ case "$ACTION" in
         --query "StackSummaries[].{Name:StackName,Status:StackStatus}" \
         --output table
 
-    echo "=== CDKToolkit stack status ==="
-    if aws cloudformation describe-stacks \
-           --stack-name CDKToolkit \
-           --region "$REGION" >/dev/null 2>&1; then
-        aws cloudformation describe-stacks \
-            --stack-name CDKToolkit \
-            --region "$REGION" \
-            --query "Stacks[0].{Name:StackName,Status:StackStatus}" \
-            --output table
+    echo
+    for stack in ResumeAuthStack ResumeBackendStack ResumeFrontendStack; do
+      echo "=== Outputs for $stack ==="
+      if aws cloudformation describe-stacks \
+             --stack-name "$stack" \
+             --region "$REGION" >/dev/null 2>&1; then
+          aws cloudformation describe-stacks \
+              --stack-name "$stack" \
+              --region "$REGION" \
+              --query "Stacks[0].Outputs" \
+              --output table
+      else
+          echo "Stack $stack not found."
+      fi
+      echo
+    done
+
+    echo "=== All CloudFormation Exports (cross-stack values) ==="
+    aws cloudformation list-exports \
+        --region "$REGION" \
+        --query "Exports[?starts_with(Name,'Resume')].[Name,Value]" \
+        --output table
+
+    echo
+    echo "=== Frontend URLs (if deployed) ==="
+    BUCKET=$(aws cloudformation describe-stacks \
+      --stack-name ResumeFrontendStack \
+      --region "$REGION" \
+      --query "Stacks[0].Outputs[?OutputKey=='FrontendBucket'].OutputValue" \
+      --output text 2>/dev/null || echo "")
+
+    CLOUDFRONT=$(aws cloudformation describe-stacks \
+      --stack-name ResumeFrontendStack \
+      --region "$REGION" \
+      --query "Stacks[0].Outputs[?OutputKey=='CloudFrontDomain'].OutputValue" \
+      --output text 2>/dev/null || echo "")
+
+    if [[ -n "$BUCKET" && "$BUCKET" != "None" ]]; then
+      echo "config.json: https://$BUCKET.s3.$REGION.amazonaws.com/config.json"
     else
-        echo "CDKToolkit stack not found in $ACCOUNT_ID/$REGION"
+      echo "Frontend bucket not found."
+    fi
+
+    if [[ -n "$CLOUDFRONT" && "$CLOUDFRONT" != "None" ]]; then
+      echo "CloudFront: https://$CLOUDFRONT/"
+    else
+      echo "CloudFront distribution not found."
     fi
     ;;
 
   *)
-    echo "Usage: $0 {up|down|status}"
+    echo "Usage: $0 {up|down|status} [--force]"
     exit 1
     ;;
 esac

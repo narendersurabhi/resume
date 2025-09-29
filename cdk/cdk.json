@@ -1,0 +1,7 @@
+{
+  "app": "python3.11 -m cdk.app",
+  "context": {
+    "account": "026654547457",
+    "region": "us-east-2"
+  }
+}
