@@ -1,7 +1,11 @@
-import React, { useEffect, useState } from 'react';
-import { Amplify } from 'aws-amplify';
-import Dashboard from './pages/Dashboard.jsx';
-import runtimeConfig from '../public/config.json?url';
+import React, { useEffect, useState } from "react";
+import { Amplify } from "aws-amplify";
+import { getCurrentUser } from "aws-amplify/auth";
+import { get, post } from "aws-amplify/api";
+import { uploadData } from "aws-amplify/storage";
+
+import Dashboard from "./pages/Dashboard.jsx";
+import runtimeConfig from "../public/config.json?url";
 
 const App = () => {
   const [config, setConfig] = useState(null);
@@ -11,31 +15,37 @@ const App = () => {
       try {
         const response = await fetch(runtimeConfig);
         const data = await response.json();
+
+        console.log("✅ Loaded runtime config:", data);
+
         Amplify.configure({
           Auth: {
-            region: data.region,
-            userPoolId: data.userPoolId,
-            userPoolWebClientId: data.userPoolClientId,
-            identityPoolId: data.identityPoolId,
+            Cognito: {
+              userPoolId: data.userPoolId,
+              userPoolClientId: data.userPoolClientId,
+              identityPoolId: data.identityPoolId,
+              region: data.region,
+            },
           },
           API: {
-            endpoints: [
-              {
-                name: 'resumeApi',
+            REST: {
+              resumeApi: {
                 endpoint: data.apiUrl,
+                region: data.region,
               },
-            ],
+            },
           },
           Storage: {
-            AWSS3: {
+            S3: {
               bucket: data.bucketName,
               region: data.region,
             },
           },
         });
+
         setConfig(data);
       } catch (err) {
-        console.error('Failed to load runtime config', err);
+        console.error("❌ Failed to load runtime config:", err);
       }
     };
 
