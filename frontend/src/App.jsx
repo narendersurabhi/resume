@@ -1,21 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { Amplify } from "aws-amplify";
-import { getCurrentUser } from "aws-amplify/auth";
-import { get, post } from "aws-amplify/api";
-import { uploadData } from "aws-amplify/storage";
-
 import Dashboard from "./pages/Dashboard.jsx";
-import runtimeConfig from "../public/config.json?url";
 
 const App = () => {
   const [config, setConfig] = useState(null);
 
   useEffect(() => {
-    const loadConfig = async () => {
+    (async () => {
       try {
-        const response = await fetch(runtimeConfig);
-        const data = await response.json();
-
+        const res = await fetch("/config.json", { cache: "no-cache" });
+        const data = await res.json();
         console.log("✅ Loaded runtime config:", data);
 
         Amplify.configure({
@@ -29,27 +23,17 @@ const App = () => {
           },
           API: {
             REST: {
-              resumeApi: {
-                endpoint: data.apiUrl,
-                region: data.region,
-              },
+              resumeApi: { endpoint: data.apiUrl, region: data.region },
             },
           },
-          Storage: {
-            S3: {
-              bucket: data.bucketName,
-              region: data.region,
-            },
-          },
+          Storage: { S3: { bucket: data.bucketName, region: data.region } },
         });
 
         setConfig(data);
-      } catch (err) {
-        console.error("❌ Failed to load runtime config:", err);
+      } catch (e) {
+        console.error("❌ Failed to load runtime config:", e);
       }
-    };
-
-    loadConfig();
+    })();
   }, []);
 
   if (!config) {
