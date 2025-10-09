@@ -11,43 +11,37 @@ permissions:
 
 env:
   AWS_REGION: us-east-2
-  CDK_CONTEXT_ACCOUNT: ${{ secrets.AWS_ACCOUNT_ID }}   # set in repo secrets
+  CDK_CONTEXT_ACCOUNT: ${{ secrets.AWS_ACCOUNT_ID }}
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-2
-
-      - name: Configure AWS (OIDC)
+      # Configure AWS credentials using OIDC
+      - name: Configure AWS credentials via OIDC
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}   # e.g. arn:aws:iam::<acct>:role/GitHubOIDCDeployRole
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/resume-deploy-role
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Setup Node (CDK CLI)
+      - name: Setup Node.js (for CDK CLI)
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - name: Install CDK CLI
-        run: npm i -g aws-cdk@2
+      - name: Install AWS CDK CLI
+        run: npm install -g aws-cdk@2
 
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: Install CDK Python deps
+      - name: Install CDK Python dependencies
         run: pip install -r cdk/requirements.txt
 
       - name: Build frontend
@@ -61,8 +55,7 @@ jobs:
           chmod +x layers/docx_layer/build.sh
           bash layers/docx_layer/build.sh
 
-      # Optional: first-time bootstrap (safe to re-run, but you can comment out after first run)
-      - name: CDK bootstrap (idempotent)
+      - name: CDK Bootstrap (safe to rerun)
         run: |
           cdk bootstrap aws://${{ secrets.AWS_ACCOUNT_ID }}/${{ env.AWS_REGION }} \
             --cloudformation-execution-policies arn:aws:iam::aws:policy/AdministratorAccess \
@@ -71,7 +64,7 @@ jobs:
           CDK_DEFAULT_ACCOUNT: ${{ secrets.AWS_ACCOUNT_ID }}
           CDK_DEFAULT_REGION: ${{ env.AWS_REGION }}
 
-      - name: Deploy stacks (auth, backend, frontend)
+      - name: Deploy CDK stacks
         env:
           CDK_DEFAULT_ACCOUNT: ${{ secrets.AWS_ACCOUNT_ID }}
           CDK_DEFAULT_REGION: ${{ env.AWS_REGION }}
@@ -80,7 +73,7 @@ jobs:
             ResumeAuthStack ResumeBackendStack ResumeFrontendStack \
             --require-approval never
 
-      # Optional: CloudFront invalidation (set CF_DIST_ID secret if you want this)
-      # - name: Invalidate CloudFront
-      #   if: ${{ secrets.CF_DIST_ID != '' }}
-      #   run: aws cloudfront create-invalidation --distribution-id "${{ secrets.CF_DIST_ID }}" --paths "/*"
+      # Optional CloudFront invalidation
+      - name: Invalidate CloudFront cache
+        if: ${{ secrets.CF_DIST_ID != '' }}
+        run: aws cloudfront create-invalidation --distribution-id "${{ secrets.CF_DIST_ID }}" --paths "/*"
