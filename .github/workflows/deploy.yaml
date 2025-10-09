@@ -74,6 +74,6 @@ jobs:
             --require-approval never
 
       # Optional: CloudFront invalidation (set CF_DIST_ID secret if you want this)
-      - name: Invalidate CloudFront
-        if: ${{ secrets.CF_DIST_ID != '' }}
-        run: aws cloudfront create-invalidation --distribution-id "${{ secrets.CF_DIST_ID }}" --paths "/*"
+      # - name: Invalidate CloudFront
+      #   if: ${{ secrets.CF_DIST_ID != '' }}
+      #   run: aws cloudfront create-invalidation --distribution-id "${{ secrets.CF_DIST_ID }}" --paths "/*"
