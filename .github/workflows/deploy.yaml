@@ -1,0 +1,79 @@
+name: Deploy CDK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: us-east-2
+  CDK_CONTEXT_ACCOUNT: ${{ secrets.AWS_ACCOUNT_ID }}   # set in repo secrets
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}   # e.g. arn:aws:iam::<acct>:role/GitHubOIDCDeployRole
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Node (CDK CLI)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install CDK CLI
+        run: npm i -g aws-cdk@2
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install CDK Python deps
+        run: pip install -r cdk/requirements.txt
+
+      - name: Build frontend
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+
+      - name: Build Lambda docx layer (python-docx + lxml)
+        run: |
+          chmod +x layers/docx_layer/build.sh
+          bash layers/docx_layer/build.sh
+
+      # Optional: first-time bootstrap (safe to re-run, but you can comment out after first run)
+      - name: CDK bootstrap (idempotent)
+        run: |
+          cdk bootstrap aws://${{ secrets.AWS_ACCOUNT_ID }}/${{ env.AWS_REGION }} \
+            --cloudformation-execution-policies arn:aws:iam::aws:policy/AdministratorAccess \
+            --require-approval never || true
+        env:
+          CDK_DEFAULT_ACCOUNT: ${{ secrets.AWS_ACCOUNT_ID }}
+          CDK_DEFAULT_REGION: ${{ env.AWS_REGION }}
+
+      - name: Deploy stacks (auth, backend, frontend)
+        env:
+          CDK_DEFAULT_ACCOUNT: ${{ secrets.AWS_ACCOUNT_ID }}
+          CDK_DEFAULT_REGION: ${{ env.AWS_REGION }}
+        run: |
+          cdk deploy --app "python3.11 -m cdk.app" \
+            ResumeAuthStack ResumeBackendStack ResumeFrontendStack \
+            --require-approval never
+
+      # Optional: CloudFront invalidation (set CF_DIST_ID secret if you want this)
+      - name: Invalidate CloudFront
+        if: ${{ secrets.CF_DIST_ID != '' }}
+        run: aws cloudfront create-invalidation --distribution-id "${{ secrets.CF_DIST_ID }}" --paths "/*"

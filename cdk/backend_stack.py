@@ -14,6 +14,8 @@ from aws_cdk import (
 from aws_cdk.aws_cognito_identitypool_alpha import IdentityPool
 from constructs import Construct
 from aws_cdk import CfnOutput
+from aws_cdk.aws_lambda_python_alpha import PythonFunction, PythonLayerVersion  # add import
+from aws_cdk import aws_lambda as lambda_
 
 class BackendStack(Stack):
     """Creates serverless backend resources including S3, DynamoDB, Lambda, and API Gateway."""
@@ -62,6 +64,20 @@ class BackendStack(Stack):
             environment=lambda_env,
         )
 
+        # generate_function = PythonFunction(
+        #     self,
+        #     "ResumeGenerateFunction",
+        #     entry="lambdas/generate_handler",      # folder with app.py and requirements.txt
+        #     index="app.py",                        # your file name
+        #     handler="handler",
+        #     runtime=lambda_.Runtime.PYTHON_3_12,
+        #     memory_size=2048,
+        #     timeout=Duration.minutes(15),
+        #     environment=lambda_env,
+        #     # optional: exclude boto3 since it’s in the runtime
+        #     bundling={"asset_excludes": ["boto3", "botocore"],}
+        # )
+
         # Generate Lambda (heavier workload)
         generate_function = lambda_.Function(
             self,
@@ -74,6 +90,15 @@ class BackendStack(Stack):
             log_retention=logs.RetentionDays.ONE_MONTH,
             environment=lambda_env,
         )
+
+        docx_layer = lambda_.LayerVersion(
+            self, "DocxLayer",
+            code=lambda_.Code.from_asset("layers/docx_layer"),
+            compatible_runtimes=[lambda_.Runtime.PYTHON_3_12],
+            compatible_architectures=[lambda_.Architecture.X86_64],  # use ARM_64 if your fn is arm
+            description="python-docx + lxml for generate handler",
+        )
+        generate_function.add_layers(docx_layer)
 
         # Download Lambda
         download_function = lambda_.Function(
@@ -121,15 +146,16 @@ class BackendStack(Stack):
 
         # API Gateway
         api = apigateway.RestApi(
-            self,
-            "ResumeApi",
+            self, "ResumeApi",
             rest_api_name="ResumeTailorService",
             default_cors_preflight_options=apigateway.CorsOptions(
                 allow_origins=apigateway.Cors.ALL_ORIGINS,
                 allow_methods=apigateway.Cors.ALL_METHODS,
                 allow_headers=["*"],
+                allow_credentials=False,  # set True only if you use cookies
             ),
         )
+
 
         api.root.add_resource("upload").add_method("POST", apigateway.LambdaIntegration(upload_function))
         api.root.add_resource("generate").add_method("POST", apigateway.LambdaIntegration(generate_function))

@@ -13,6 +13,19 @@ import boto3
 s3 = boto3.client("s3")
 dynamodb = boto3.resource("dynamodb")
 
+CORS_HEADERS = {
+    "Access-Control-Allow-Origin": "*",          # or your CF domain
+    "Access-Control-Allow-Headers": "*",
+    "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+}
+
+def _ok(body, status=200):
+    return {"statusCode": status, "headers": CORS_HEADERS, "body": json.dumps(body)}
+
+def _err(status, msg):
+    return {"statusCode": status, "headers": CORS_HEADERS, "body": json.dumps({"error": msg})}
+
+
 BUCKET_NAME = os.environ["BUCKET_NAME"]
 TABLE_NAME = os.environ["TABLE_NAME"]
 
@@ -20,13 +33,16 @@ TABLE_NAME = os.environ["TABLE_NAME"]
 def _response(status: int, body: Dict[str, Any]) -> Dict[str, Any]:
     return {
         "statusCode": status,
-        "headers": {"Content-Type": "application/json"},
+        "headers": CORS_HEADERS, # {"Content-Type": "application/json"},
         "body": json.dumps(body),
     }
 
 
 def handler(event: Dict[str, Any], _context: Any) -> Dict[str, Any]:
     """Persist uploaded file in S3 and metadata in DynamoDB."""
+    if event.get("httpMethod") == "OPTIONS":
+        return _ok({}, 204)
+    
     try:
         payload = json.loads(event.get("body") or "{}")
         tenant_id = payload["tenantId"]

@@ -12,11 +12,16 @@ s3 = boto3.client("s3")
 
 BUCKET_NAME = os.environ["BUCKET_NAME"]
 
+CORS_HEADERS = {
+    "Access-Control-Allow-Origin": "*",          # or your CF domain
+    "Access-Control-Allow-Headers": "*",
+    "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+}
 
 def _response(status: int, body: Dict[str, Any]) -> Dict[str, Any]:
     return {
         "statusCode": status,
-        "headers": {"Content-Type": "application/json"},
+        "headers": CORS_HEADERS, #{"Content-Type": "application/json"},
         "body": json.dumps(body),
     }
 
