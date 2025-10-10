@@ -32,12 +32,19 @@ def _invoke_bedrock(prompt: str) -> str:
         "inputText": prompt,
         "textGenerationConfig": {"maxTokenCount": 1024, "temperature": 0.2, "topP": 0.9}
     })
+
     resp = bedrock.invoke_model(
-        modelId=BEDROCK_MODEL_ID,          # <- use profile ARN here
-        body=body,
+        modelId=BEDROCK_MODEL_ID,
         contentType="application/json",
         accept="application/json",
+        body=json.dumps({
+            "schema": {"type":"object","properties":{"messages":{"type":"array"}}},
+            "input": {
+                "messages":[{"role":"user","content":[{"type":"text","text": prompt}]}]
+            }
+        })
     )
+
     payload = json.loads(resp["body"].read())
     # adjust parsing to your model output
     return payload.get("results", [{}])[0].get("outputText", "")

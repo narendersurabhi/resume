@@ -99,15 +99,7 @@ class BackendStack(Stack):
         table.grant_read_write_data(generate_function)
         table.grant_read_data(download_function)
 
-        generate_function.add_to_role_policy(iam.PolicyStatement(
-            actions=[
-                "bedrock:InvokeModel",
-                "bedrock:InvokeModelWithResponseStream",
-            ],
-            resources=[profile_arn, 
-                       model_arn, 
-                       "arn:aws:bedrock:us-east-2:026654547457:application-inference-profile/*"]
-        ))
+        generate_function.add_to_role_policy(iam.PolicyStatement(actions=["bedrock:InvokeModel"], resources=["arn:aws:bedrock:us-east-2::foundation-model/openai.gpt-oss-120b-1:0"]))
 
         frontend_domain = f"https://{CF_DIST_ID}.cloudfront.net"  # put your CF URL here
 
