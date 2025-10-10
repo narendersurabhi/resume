@@ -13,8 +13,10 @@ import boto3
 s3 = boto3.client("s3")
 dynamodb = boto3.resource("dynamodb")
 
+frontend_domain = "https://dbeuad68389xx.cloudfront.net"  # put your CF URL here
+
 CORS_HEADERS = {
-    "Access-Control-Allow-Origin": "*",          # or your CF domain
+    "Access-Control-Allow-Origin": frontend_domain,          # or your CF domain
     "Access-Control-Allow-Headers": "*",
     "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
 }

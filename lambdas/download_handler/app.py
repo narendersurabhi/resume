@@ -12,8 +12,10 @@ s3 = boto3.client("s3")
 
 BUCKET_NAME = os.environ["BUCKET_NAME"]
 
+frontend_domain = "https://dbeuad68389xx.cloudfront.net"  # put your CF URL here
+
 CORS_HEADERS = {
-    "Access-Control-Allow-Origin": "*",          # or your CF domain
+    "Access-Control-Allow-Origin": frontend_domain,          # or your CF domain
     "Access-Control-Allow-Headers": "*",
     "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
 }

@@ -10,6 +10,13 @@ log.setLevel(logging.INFO)
 bedrock = boto3.client("bedrock-runtime", region_name=os.environ.get("AWS_REGION", "us-east-2"))
 PROFILE_ARN = os.environ["BEDROCK_INFERENCE_PROFILE_ARN"]
 
+frontend_domain = "https://dbeuad68389xx.cloudfront.net"  # put your CF URL here
+
+CORS_HEADERS = {
+    "Access-Control-Allow-Origin": frontend_domain,          # or your CF domain
+    "Access-Control-Allow-Headers": "*",
+    "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+}
 
 def _invoke_bedrock(prompt: str) -> str:
     # Anthropic on Bedrock schema
@@ -67,6 +74,6 @@ def handler(event, context):
 
     return {
         "statusCode": 200,
-        "headers": {"Content-Type": "application/json"},
+        "headers": CORS_HEADERS,
         "body": json.dumps({"text": output}),
     }

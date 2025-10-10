@@ -106,16 +106,18 @@ class BackendStack(Stack):
             )
         )
 
+        frontend_domain = "https://dbeuad68389xx.cloudfront.net"  # put your CF URL here
+
         # API Gateway with permissive CORS (adjust as needed)
         api = apigateway.RestApi(
             self,
             "ResumeApi",
             rest_api_name="ResumeTailorService",
             default_cors_preflight_options=apigateway.CorsOptions(
-                allow_origins=["https://*", "http://localhost:5173"],
+                allow_origins=[frontend_domain],
                 allow_methods=apigateway.Cors.ALL_METHODS,
                 allow_headers=["*"],
-                allow_credentials=False,
+                allow_credentials=False,  # set True only if sending cookies
             ),
         )
 
