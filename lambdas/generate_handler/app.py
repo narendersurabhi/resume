@@ -1,8 +1,14 @@
 """Lambda handler responsible for generating tailored resumes."""
 from __future__ import annotations
-import io, json, logging, os, uuid
+
+import io
+import json
+import logging
+import os
+import uuid
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional
+
 import boto3
 from botocore.exceptions import ClientError
 from docx import Document
@@ -17,27 +23,25 @@ comprehend = boto3.client("comprehend")
 
 BUCKET_NAME = os.environ["BUCKET_NAME"]
 TABLE_NAME = os.environ["TABLE_NAME"]
-
-# Use your active inference profile for Llama 3.3 70B Instruct
-BEDROCK_MODEL_ID = os.environ.get(
-    "BEDROCK_MODEL_ID",
-    "arn:aws:bedrock:us-east-2:026654547457:application-inference-profile/zw6bj0p9104h",
-)
+BEDROCK_MODEL_ID = os.environ.get("BEDROCK_MODEL_ID", "anthropic.claude-3-haiku-20240307-v1:0")
 OUTPUT_PREFIX = os.environ.get("OUTPUT_PREFIX", "generated")
 
 CORS_HEADERS = {
-    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Origin": "*",          # or your CF domain
     "Access-Control-Allow-Headers": "*",
     "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
 }
 
-
 def _response(status: int, body: Dict[str, Any]) -> Dict[str, Any]:
-    return {"statusCode": status, "headers": CORS_HEADERS, "body": json.dumps(body)}
+    return {
+        "statusCode": status,
+        "headers": CORS_HEADERS, #{"Content-Type": "application/json"},
+        "body": json.dumps(body),
+    }
 
 
 def _read_s3_text(key: str) -> str:
-    LOGGER.info("Fetching %s from %s", key, BUCKET_NAME)
+    LOGGER.info("Fetching object %s from bucket %s", key, BUCKET_NAME)
     obj = s3.get_object(Bucket=BUCKET_NAME, Key=key)
     return obj["Body"].read().decode("utf-8")
 
@@ -48,21 +52,31 @@ def _read_s3_bytes(key: str) -> bytes:
 
 
 def _invoke_bedrock(prompt: str) -> str:
-    """Invoke Llama 3.3 70B Instruct model through its inference profile."""
     body = json.dumps(
         {
-            "inputText": prompt,
-            "textGenerationConfig": {
-                "maxTokenCount": 4000,
-                "temperature": 0.3,
-                "topP": 0.9,
-            },
+            "anthropic_version": "bedrock-2023-05-31",
+            "max_tokens": 4000,
+            "temperature": 0.3,
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": prompt,
+                        }
+                    ],
+                }
+            ],
         }
     )
 
     response = bedrock.invoke_model(modelId=BEDROCK_MODEL_ID, body=body)
     payload = json.loads(response["body"].read())
-    return payload.get("outputText", "").strip()
+    content = payload.get("content", [])
+    if not content:
+        raise RuntimeError("Empty response from Bedrock model")
+    return content[0].get("text", "")
 
 
 def _apply_pii_screening(text: str) -> None:
@@ -100,13 +114,13 @@ def _pdf_escape(text: str) -> str:
 
 
 def _generate_pdf_bytes(tailored_text: str) -> bytes:
-    escaped_text = _pdf_escape(tailored_text[:2000])
+    """Create a minimal PDF document containing the tailored text."""
+    escaped_text = _pdf_escape(tailored_text[:2000])  # limit size for placeholder PDF
     stream = f"BT /F1 12 Tf 72 720 Td ({escaped_text}) Tj ET"
     objects = [
         "1 0 obj<< /Type /Catalog /Pages 2 0 R >>endobj\n",
         "2 0 obj<< /Type /Pages /Kids [3 0 R] /Count 1 >>endobj\n",
-        "3 0 obj<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] "
-        "/Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>endobj\n",
+        "3 0 obj<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>endobj\n",
         "4 0 obj<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>endobj\n",
         f"5 0 obj<< /Length {len(stream)} >>stream\n{stream}\nendstream\nendobj\n",
     ]
@@ -117,7 +131,9 @@ def _generate_pdf_bytes(tailored_text: str) -> bytes:
         offsets.append(len(pdf_body))
         pdf_body.extend(obj.encode("utf-8"))
     xref_start = len(pdf_body)
-    xref_entries = ["0000000000 65535 f \n"] + [f"{o:010} 00000 n \n" for o in offsets[1:]]
+    xref_entries = ["0000000000 65535 f \n"]
+    for offset in offsets[1:]:
+        xref_entries.append(f"{offset:010} 00000 n \n")
     pdf_body.extend(b"xref\n0 6\n")
     pdf_body.extend("".join(xref_entries).encode("utf-8"))
     pdf_body.extend(b"trailer<< /Size 6 /Root 1 0 R >>\nstartxref\n")
@@ -148,15 +164,14 @@ def handler(event: Dict[str, Any], _context: Any) -> Dict[str, Any]:
     _apply_pii_screening(job_description)
 
     prompt = (
-        "You are an expert technical resume writer. Align the candidate’s experience "
-        "and achievements from the approved resume to the job description. Maintain professional tone "
-        "and ATS-friendly formatting.\n\nApproved resume:\n"
-        + resume_text
-        + "\n\nJob description:\n"
-        + job_description
+        "You are an expert technical resume writer. Format the tailored resume as closely as "
+        "possible to the provided template. Incorporate achievements from the approved resume "
+        "and align them to the job description while preserving professional tone."
+        "\n\nApproved resume:\n" + resume_text + "\n\nJob description:\n" + job_description
     )
 
     tailored_text = _invoke_bedrock(prompt)
+
     if not tailored_text:
         return _response(500, {"message": "No tailored resume generated"})
 
@@ -172,19 +187,33 @@ def handler(event: Dict[str, Any], _context: Any) -> Dict[str, Any]:
     s3.put_object(Bucket=BUCKET_NAME, Key=pdf_key, Body=pdf_bytes)
 
     table = dynamodb.Table(TABLE_NAME)
-    for fmt, key in [("docx", docx_key), ("pdf", pdf_key)]:
-        table.put_item(
-            Item={
-                "tenantId": tenant_id,
-                "resourceId": key,
-                "category": "generated",
-                "outputId": output_id,
-                "format": fmt,
-                "createdAt": timestamp,
-            }
-        )
+    table.put_item(
+        Item={
+            "tenantId": tenant_id,
+            "resourceId": docx_key,
+            "category": "generated",
+            "outputId": output_id,
+            "format": "docx",
+            "createdAt": timestamp,
+        }
+    )
+    table.put_item(
+        Item={
+            "tenantId": tenant_id,
+            "resourceId": pdf_key,
+            "category": "generated",
+            "outputId": output_id,
+            "format": "pdf",
+            "createdAt": timestamp,
+        }
+    )
 
     return _response(
         200,
-        {"message": "Resume generated", "docxKey": docx_key, "pdfKey": pdf_key, "outputId": output_id},
+        {
+            "message": "Resume generated",
+            "docxKey": docx_key,
+            "pdfKey": pdf_key,
+            "outputId": output_id,
+        },
     )
