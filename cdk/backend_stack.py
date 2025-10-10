@@ -121,6 +121,31 @@ class BackendStack(Stack):
             ),
         )
 
+        # Ensure preflight still matches your origins
+        # after: api = apigateway.RestApi(...)
+        # handle enum name differences across CDK versions
+        rtype_4xx = getattr(apigateway.ResponseType, "DEFAULT_4_XX", apigateway.ResponseType("DEFAULT_4XX"))
+        rtype_5xx = getattr(apigateway.ResponseType, "DEFAULT_5_XX", apigateway.ResponseType("DEFAULT_5XX"))
+
+        api.add_gateway_response(
+            "Default4xx",
+            type=rtype_4xx,
+            response_headers={
+                "Access-Control-Allow-Origin": "'https://dbeuad68389xx.cloudfront.net'",
+                "Access-Control-Allow-Headers": "'*'",
+                "Access-Control-Allow-Methods": "'GET,POST,OPTIONS'",
+            },
+        )
+        api.add_gateway_response(
+            "Default5xx",
+            type=rtype_5xx,
+            response_headers={
+                "Access-Control-Allow-Origin": "'https://dbeuad68389xx.cloudfront.net'",
+                "Access-Control-Allow-Headers": "'*'",
+                "Access-Control-Allow-Methods": "'GET,POST,OPTIONS'",
+            },
+        )
+
         api.root.add_resource("upload").add_method("POST", apigateway.LambdaIntegration(upload_function))
         api.root.add_resource("generate").add_method("POST", apigateway.LambdaIntegration(generate_function))
         api.root.add_resource("download").add_method("GET", apigateway.LambdaIntegration(download_function))
