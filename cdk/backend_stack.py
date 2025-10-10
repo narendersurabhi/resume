@@ -124,8 +124,9 @@ class BackendStack(Stack):
         # Ensure preflight still matches your origins
         # after: api = apigateway.RestApi(...)
         # handle enum name differences across CDK versions
-        rtype_4xx = getattr(apigateway.ResponseType, "DEFAULT_4_XX", apigateway.ResponseType("DEFAULT_4XX"))
-        rtype_5xx = getattr(apigateway.ResponseType, "DEFAULT_5_XX", apigateway.ResponseType("DEFAULT_5XX"))
+        # Enum names vary by CDK version
+        rtype_4xx = getattr(apigateway.ResponseType, "DEFAULT_4_XX", None) or getattr(apigateway.ResponseType, "DEFAULT_4XX")
+        rtype_5xx = getattr(apigateway.ResponseType, "DEFAULT_5_XX", None) or getattr(apigateway.ResponseType, "DEFAULT_5XX")
 
         api.add_gateway_response(
             "Default4xx",
