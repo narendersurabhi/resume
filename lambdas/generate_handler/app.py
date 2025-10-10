@@ -1,219 +1,72 @@
-"""Lambda handler responsible for generating tailored resumes."""
-from __future__ import annotations
-
-import io
-import json
-import logging
 import os
-import uuid
-from datetime import datetime, timezone
-from typing import Any, Dict, Optional
-
+import json
 import boto3
-from botocore.exceptions import ClientError
-from docx import Document
+import logging
 
-LOGGER = logging.getLogger()
-LOGGER.setLevel(logging.INFO)
+log = logging.getLogger()
+log.setLevel(logging.INFO)
 
-s3 = boto3.client("s3")
-dynamodb = boto3.resource("dynamodb")
-bedrock = boto3.client("bedrock-runtime")
-comprehend = boto3.client("comprehend")
-
-BUCKET_NAME = os.environ["BUCKET_NAME"]
-TABLE_NAME = os.environ["TABLE_NAME"]
-BEDROCK_MODEL_ID = os.environ.get("BEDROCK_MODEL_ID", "anthropic.claude-3-haiku-20240307-v1:0")
-OUTPUT_PREFIX = os.environ.get("OUTPUT_PREFIX", "generated")
-
-CORS_HEADERS = {
-    "Access-Control-Allow-Origin": "*",          # or your CF domain
-    "Access-Control-Allow-Headers": "*",
-    "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
-}
-
-def _response(status: int, body: Dict[str, Any]) -> Dict[str, Any]:
-    return {
-        "statusCode": status,
-        "headers": CORS_HEADERS, #{"Content-Type": "application/json"},
-        "body": json.dumps(body),
-    }
-
-
-def _read_s3_text(key: str) -> str:
-    LOGGER.info("Fetching object %s from bucket %s", key, BUCKET_NAME)
-    obj = s3.get_object(Bucket=BUCKET_NAME, Key=key)
-    return obj["Body"].read().decode("utf-8")
-
-
-def _read_s3_bytes(key: str) -> bytes:
-    obj = s3.get_object(Bucket=BUCKET_NAME, Key=key)
-    return obj["Body"].read()
+# Ensure region is set; Lambda sets AWS_REGION automatically
+bedrock = boto3.client("bedrock-runtime", region_name=os.environ.get("AWS_REGION", "us-east-2"))
+PROFILE_ARN = os.environ["BEDROCK_INFERENCE_PROFILE_ARN"]
 
 
 def _invoke_bedrock(prompt: str) -> str:
-    body = json.dumps(
-        {
-            "anthropic_version": "bedrock-2023-05-31",
-            "max_tokens": 4000,
-            "temperature": 0.3,
-            "messages": [
-                {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "text",
-                            "text": prompt,
-                        }
-                    ],
-                }
-            ],
-        }
-    )
+    # Anthropic on Bedrock schema
+    body = {
+        "anthropic_version": "bedrock-2023-05-31",
+        "max_tokens": 800,
+        "temperature": 0.3,
+        "messages": [
+            {"role": "user", "content": [{"type": "text", "text": prompt}]}
+        ],
+    }
+    payload = json.dumps(body)
 
-    response = bedrock.invoke_model(modelId=BEDROCK_MODEL_ID, body=body)
-    payload = json.loads(response["body"].read())
-    content = payload.get("content", [])
-    if not content:
-        raise RuntimeError("Empty response from Bedrock model")
-    return content[0].get("text", "")
-
-
-def _apply_pii_screening(text: str) -> None:
+    # Prefer the newer signature with inferenceProfileArn. Fallback if SDK is older.
     try:
-        result = comprehend.contains_pii_entities(Text=text, LanguageCode="en")
-        if result.get("Labels"):
-            LOGGER.warning("PII detected in job description: %s", result["Labels"])
-    except ClientError as exc:
-        LOGGER.warning("PII detection failed: %s", exc)
+        resp = bedrock.invoke_model(
+            inferenceProfileArn=PROFILE_ARN,
+            body=payload,
+            contentType="application/json",
+            accept="application/json",
+        )
+    except TypeError:
+        resp = bedrock.invoke_model(
+            modelId=PROFILE_ARN,  # fallback path
+            body=payload,
+            contentType="application/json",
+            accept="application/json",
+        )
+
+    result = json.loads(resp["body"].read())
+
+    # Extract text from Anthropic output
+    text_chunks = []
+    content = result.get("output", {}).get("content", [])
+    for block in content:
+        if block.get("type") == "text":
+            text_chunks.append(block.get("text", ""))
+    text = "".join(text_chunks).strip()
+
+    return text or json.dumps(result)
 
 
-def _build_docx(template_bytes: Optional[bytes], tailored_text: str) -> bytes:
-    if template_bytes:
-        document = Document(io.BytesIO(template_bytes))
-        for paragraph in document.paragraphs:
-            if "{{TAILORED_CONTENT}}" in paragraph.text:
-                paragraph.text = tailored_text
-                break
-        else:
-            document.add_page_break()
-            document.add_paragraph(tailored_text)
-    else:
-        document = Document()
-        for line in tailored_text.splitlines():
-            document.add_paragraph(line)
-
-    buffer = io.BytesIO()
-    document.save(buffer)
-    buffer.seek(0)
-    return buffer.read()
-
-
-def _pdf_escape(text: str) -> str:
-    return text.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
-
-
-def _generate_pdf_bytes(tailored_text: str) -> bytes:
-    """Create a minimal PDF document containing the tailored text."""
-    escaped_text = _pdf_escape(tailored_text[:2000])  # limit size for placeholder PDF
-    stream = f"BT /F1 12 Tf 72 720 Td ({escaped_text}) Tj ET"
-    objects = [
-        "1 0 obj<< /Type /Catalog /Pages 2 0 R >>endobj\n",
-        "2 0 obj<< /Type /Pages /Kids [3 0 R] /Count 1 >>endobj\n",
-        "3 0 obj<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>endobj\n",
-        "4 0 obj<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>endobj\n",
-        f"5 0 obj<< /Length {len(stream)} >>stream\n{stream}\nendstream\nendobj\n",
-    ]
-
-    offsets = [0]
-    pdf_body = bytearray(b"%PDF-1.4\n")
-    for obj in objects:
-        offsets.append(len(pdf_body))
-        pdf_body.extend(obj.encode("utf-8"))
-    xref_start = len(pdf_body)
-    xref_entries = ["0000000000 65535 f \n"]
-    for offset in offsets[1:]:
-        xref_entries.append(f"{offset:010} 00000 n \n")
-    pdf_body.extend(b"xref\n0 6\n")
-    pdf_body.extend("".join(xref_entries).encode("utf-8"))
-    pdf_body.extend(b"trailer<< /Size 6 /Root 1 0 R >>\nstartxref\n")
-    pdf_body.extend(f"{xref_start}\n".encode("utf-8"))
-    pdf_body.extend(b"%%EOF")
-    return bytes(pdf_body)
-
-
-def handler(event: Dict[str, Any], _context: Any) -> Dict[str, Any]:
+def handler(event, context):
+    # Expect a JSON body with a 'prompt' field. Adjust if your API contract differs.
     try:
-        payload = json.loads(event.get("body") or "{}")
-        tenant_id = payload["tenantId"]
-        resume_key = payload["resumeKey"]
-        template_key = payload.get("templateKey")
-        job_description = payload.get("jobDescription")
-        job_description_key = payload.get("jobDescriptionKey")
-    except (json.JSONDecodeError, KeyError) as exc:
-        return _response(400, {"message": f"Invalid request payload: {exc}"})
+        body = event.get("body") or "{}"
+        if isinstance(body, str):
+            body = json.loads(body)
+        prompt = body.get("prompt") or "Summarize: Hello"
+    except Exception:
+        prompt = "Summarize: Hello"
 
-    if not job_description and job_description_key:
-        job_description = _read_s3_text(job_description_key)
-    elif not job_description:
-        return _response(400, {"message": "Job description is required"})
+    log.info("Invoking Bedrock via inference profile")
+    output = _invoke_bedrock(prompt)
 
-    resume_text = _read_s3_text(resume_key)
-    template_bytes = _read_s3_bytes(template_key) if template_key else None
-
-    _apply_pii_screening(job_description)
-
-    prompt = (
-        "You are an expert technical resume writer. Format the tailored resume as closely as "
-        "possible to the provided template. Incorporate achievements from the approved resume "
-        "and align them to the job description while preserving professional tone."
-        "\n\nApproved resume:\n" + resume_text + "\n\nJob description:\n" + job_description
-    )
-
-    tailored_text = _invoke_bedrock(prompt)
-
-    if not tailored_text:
-        return _response(500, {"message": "No tailored resume generated"})
-
-    docx_bytes = _build_docx(template_bytes, tailored_text)
-    pdf_bytes = _generate_pdf_bytes(tailored_text)
-
-    output_id = str(uuid.uuid4())
-    timestamp = datetime.now(timezone.utc).isoformat()
-    docx_key = f"{tenant_id}/{OUTPUT_PREFIX}/{output_id}.docx"
-    pdf_key = f"{tenant_id}/{OUTPUT_PREFIX}/{output_id}.pdf"
-
-    s3.put_object(Bucket=BUCKET_NAME, Key=docx_key, Body=docx_bytes)
-    s3.put_object(Bucket=BUCKET_NAME, Key=pdf_key, Body=pdf_bytes)
-
-    table = dynamodb.Table(TABLE_NAME)
-    table.put_item(
-        Item={
-            "tenantId": tenant_id,
-            "resourceId": docx_key,
-            "category": "generated",
-            "outputId": output_id,
-            "format": "docx",
-            "createdAt": timestamp,
-        }
-    )
-    table.put_item(
-        Item={
-            "tenantId": tenant_id,
-            "resourceId": pdf_key,
-            "category": "generated",
-            "outputId": output_id,
-            "format": "pdf",
-            "createdAt": timestamp,
-        }
-    )
-
-    return _response(
-        200,
-        {
-            "message": "Resume generated",
-            "docxKey": docx_key,
-            "pdfKey": pdf_key,
-            "outputId": output_id,
-        },
-    )
+    return {
+        "statusCode": 200,
+        "headers": {"Content-Type": "application/json"},
+        "body": json.dumps({"text": output}),
+    }
