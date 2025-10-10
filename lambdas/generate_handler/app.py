@@ -24,42 +24,38 @@ def _cors_headers(origin="*"):
     }
 
 def _invoke_bedrock(prompt: str) -> str:
-    body = json.dumps({
-        "inputText": prompt,
-        "textGenerationConfig": {"maxTokenCount": 1024, "temperature": 0.2, "topP": 0.9}
-    })
+
+    body = {
+        "messages": [
+            {"role": "user", "content": [{"type": "text", "text": prompt}]}
+        ],
+        "max_tokens": 256,
+        "temperature": 0.2
+    }
 
     resp = bedrock.invoke_model(
         modelId=BEDROCK_MODEL_ID,
+        body=json.dumps(body),
         contentType="application/json",
         accept="application/json",
-        body=json.dumps({
-            "schema": {"type":"object","properties":{"messages":{"type":"array"}}},
-            "input": {
-                "messages":[{"role":"user","content":[{"type":"text","text": prompt}]}]
-            }
-        })
     )
 
-    payload = json.loads(resp["body"].read())
-    # adjust parsing to your model output
-    return payload.get("results", [{}])[0].get("outputText", "")
+    out = json.loads(resp["body"].read())
+    return out["output"]["message"]["content"][0]["text"]
 
 def handler(event, context):
     # Expect a JSON body with a 'prompt' field. Adjust if your API contract differs.
+    body = json.loads(event.get("body") or "{}")
+    resume = body.get("resumeText", "")
+    job = body.get("jobDesc", "")
+    if not resume or not job:
+        return {"statusCode": 400, "headers": _cors_headers(frontend_domain), "body": json.dumps({"message": "resumeText and jobDesc required"})}
+
+    prompt = f"Tailor the following resume to this job.\n\nResume:\n{resume}\n\nJob:\n{job}\n\nReturn improved resume text."
+
     try:
-        body = event.get("body") or "{}"
-        if isinstance(body, str):
-            body = json.loads(body)
-        prompt = body.get("prompt") or "Summarize: Hello"
-    except Exception:
-        prompt = "Summarize: Hello"
-
-    log.info("Invoking Bedrock via inference profile")
-    output = _invoke_bedrock(prompt)
-
-    return {
-        "statusCode": 200,
-        "headers": _cors_headers(frontend_domain),
-        "body": json.dumps({"text": output}),
-    }
+        log.info("Invoking Bedrock via inference profile")
+        improved = _invoke_bedrock(prompt)
+        return {"statusCode": 200, "headers": _cors_headers(frontend_domain), "body": json.dumps({"result": improved})}
+    except Exception as e:
+        return {"statusCode": 500, "headers": _cors_headers(frontend_domain), "body": json.dumps({"error": str(e)})}
