@@ -6,11 +6,7 @@ import logging
 log = logging.getLogger()
 log.setLevel(logging.INFO)
 
-# Ensure region is set; Lambda sets AWS_REGION automatically
-# bedrock = boto3.client("bedrock-runtime", region_name=os.environ.get("AWS_REGION", "us-east-2"))
-# PROFILE_ARN = os.environ["BEDROCK_INFERENCE_PROFILE_ARN"]
-
-BEDROCK_MODEL_ID = os.environ["BEDROCK_MODEL_ID"] # os.environ["BEDROCK_MODEL_ID"]  # profile ARN
+BEDROCK_MODEL_ID = os.environ["BEDROCK_MODEL_ID"]
 REGION = os.environ.get("AWS_REGION", "us-east-1")
 bedrock = boto3.client("bedrock-runtime", region_name=REGION)
 
