@@ -12,11 +12,12 @@ PROFILE_ARN = os.environ["BEDROCK_INFERENCE_PROFILE_ARN"]
 
 frontend_domain = "https://dbeuad68389xx.cloudfront.net"  # put your CF URL here
 
-CORS_HEADERS = {
-    "Access-Control-Allow-Origin": frontend_domain,          # or your CF domain
-    "Access-Control-Allow-Headers": "*",
-    "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
-}
+def _cors_headers(origin="*"):
+    return {
+        "Access-Control-Allow-Origin": origin,   # use your exact CF origin in prod
+        "Access-Control-Allow-Headers": "*",
+        "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+    }
 
 def _invoke_bedrock(prompt: str) -> str:
     # Anthropic on Bedrock schema
@@ -74,6 +75,6 @@ def handler(event, context):
 
     return {
         "statusCode": 200,
-        "headers": CORS_HEADERS,
+        "headers": _cors_headers("https://dbeuad68389xx.cloudfront.net"),
         "body": json.dumps({"text": output}),
     }

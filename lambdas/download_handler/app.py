@@ -14,16 +14,17 @@ BUCKET_NAME = os.environ["BUCKET_NAME"]
 
 frontend_domain = "https://dbeuad68389xx.cloudfront.net"  # put your CF URL here
 
-CORS_HEADERS = {
-    "Access-Control-Allow-Origin": frontend_domain,          # or your CF domain
-    "Access-Control-Allow-Headers": "*",
-    "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
-}
+def _cors_headers(origin="*"):
+    return {
+        "Access-Control-Allow-Origin": origin,   # use your exact CF origin in prod
+        "Access-Control-Allow-Headers": "*",
+        "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+    }
 
 def _response(status: int, body: Dict[str, Any]) -> Dict[str, Any]:
     return {
         "statusCode": status,
-        "headers": CORS_HEADERS, #{"Content-Type": "application/json"},
+        "headers": _cors_headers("https://dbeuad68389xx.cloudfront.net"), #{"Content-Type": "application/json"},
         "body": json.dumps(body),
     }
 
