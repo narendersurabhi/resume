@@ -56,6 +56,7 @@ def handler(event, context):
     try:
         log.info("Invoking Bedrock via inference profile")
         improved = _invoke_bedrock(prompt)
+        log.info(improved)
         return {"statusCode": 200, "headers": _cors_headers(frontend_domain), "body": json.dumps({"result": improved})}
     except Exception as e:
         return {"statusCode": 500, "headers": _cors_headers(frontend_domain), "body": json.dumps({"error": str(e)})}
