@@ -101,7 +101,7 @@ class BackendStack(Stack):
 
         generate_function.add_to_role_policy(iam.PolicyStatement(actions=["bedrock:InvokeModel"], resources=["arn:aws:bedrock:us-east-2::foundation-model/openai.gpt-oss-120b-1:0"]))
 
-        frontend_domain = f"https://{CF_DIST_ID}.cloudfront.net"  # put your CF URL here
+        frontend_domain = f"https://{cf_dist_id}.cloudfront.net"  # put your CF URL here
 
         # API Gateway with permissive CORS (adjust as needed)
         api = apigateway.RestApi(
@@ -127,7 +127,7 @@ class BackendStack(Stack):
             "Default4xx",
             type=rtype_4xx,
             response_headers={
-                "Access-Control-Allow-Origin": f"'https://{CF_DIST_ID}.cloudfront.net'",
+                "Access-Control-Allow-Origin": f"'https://{cf_dist_id}.cloudfront.net'",
                 "Access-Control-Allow-Headers": "'*'",
                 "Access-Control-Allow-Methods": "'GET,POST,OPTIONS'",
             },
@@ -136,7 +136,7 @@ class BackendStack(Stack):
             "Default5xx",
             type=rtype_5xx,
             response_headers={
-                "Access-Control-Allow-Origin": f"'https://{CF_DIST_ID}.cloudfront.net'",
+                "Access-Control-Allow-Origin": f"'https://{cf_dist_id}.cloudfront.net'",
                 "Access-Control-Allow-Headers": "'*'",
                 "Access-Control-Allow-Methods": "'GET,POST,OPTIONS'",
             },
