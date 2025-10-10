@@ -52,7 +52,7 @@ class BackendStack(Stack):
             "BEDROCK_MODEL_ID": 'openai.gpt-oss-120b-1:0',
             "OUTPUT_PREFIX": "generated",    
             "CF_DIST_ID": cf_dist_id,
-            "AWS_REGION": CDK_DEFAULT_REGION,
+            "CDK_DEFAULT_REGION": CDK_DEFAULT_REGION,
         }
 
         # Lambdas

@@ -7,7 +7,7 @@ log = logging.getLogger()
 log.setLevel(logging.INFO)
 
 BEDROCK_MODEL_ID = os.environ["BEDROCK_MODEL_ID"]
-REGION = os.environ.get("AWS_REGION", "us-east-1")
+REGION = os.environ.get("CDK_DEFAULT_REGION", "us-east-1")
 bedrock = boto3.client("bedrock-runtime", region_name=REGION)
 
 log.info(f"BEDROCK_MODEL_ID: {BEDROCK_MODEL_ID}")
