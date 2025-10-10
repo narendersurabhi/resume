@@ -7,8 +7,15 @@ log = logging.getLogger()
 log.setLevel(logging.INFO)
 
 # Ensure region is set; Lambda sets AWS_REGION automatically
-bedrock = boto3.client("bedrock-runtime", region_name=os.environ.get("AWS_REGION", "us-east-2"))
-PROFILE_ARN = os.environ["BEDROCK_INFERENCE_PROFILE_ARN"]
+# bedrock = boto3.client("bedrock-runtime", region_name=os.environ.get("AWS_REGION", "us-east-2"))
+# PROFILE_ARN = os.environ["BEDROCK_INFERENCE_PROFILE_ARN"]
+
+BEDROCK_MODEL_ID = os.environ["BEDROCK_MODEL_ID"] # os.environ["BEDROCK_MODEL_ID"]  # profile ARN
+REGION = os.environ.get("AWS_REGION", "us-east-1")
+bedrock = boto3.client("bedrock-runtime", region_name=REGION)
+
+log.info(f"BEDROCK_MODEL_ID: {BEDROCK_MODEL_ID}")
+log.info(f"REGION: {REGION}")
 
 frontend_domain = "https://dbeuad68389xx.cloudfront.net"  # put your CF URL here
 
@@ -20,45 +27,19 @@ def _cors_headers(origin="*"):
     }
 
 def _invoke_bedrock(prompt: str) -> str:
-    # Anthropic on Bedrock schema
-    body = {
-        "anthropic_version": "bedrock-2023-05-31",
-        "max_tokens": 800,
-        "temperature": 0.3,
-        "messages": [
-            {"role": "user", "content": [{"type": "text", "text": prompt}]}
-        ],
-    }
-    payload = json.dumps(body)
-
-    # Prefer the newer signature with inferenceProfileArn. Fallback if SDK is older.
-    try:
-        resp = bedrock.invoke_model(
-            inferenceProfileArn=PROFILE_ARN,
-            body=payload,
-            contentType="application/json",
-            accept="application/json",
-        )
-    except TypeError:
-        resp = bedrock.invoke_model(
-            modelId=PROFILE_ARN,  # fallback path
-            body=payload,
-            contentType="application/json",
-            accept="application/json",
-        )
-
-    result = json.loads(resp["body"].read())
-
-    # Extract text from Anthropic output
-    text_chunks = []
-    content = result.get("output", {}).get("content", [])
-    for block in content:
-        if block.get("type") == "text":
-            text_chunks.append(block.get("text", ""))
-    text = "".join(text_chunks).strip()
-
-    return text or json.dumps(result)
-
+    body = json.dumps({
+        "inputText": prompt,
+        "textGenerationConfig": {"maxTokenCount": 1024, "temperature": 0.2, "topP": 0.9}
+    })
+    resp = bedrock.invoke_model(
+        modelId=BEDROCK_MODEL_ID,          # <- use profile ARN here
+        body=body,
+        contentType="application/json",
+        accept="application/json",
+    )
+    payload = json.loads(resp["body"].read())
+    # adjust parsing to your model output
+    return payload.get("results", [{}])[0].get("outputText", "")
 
 def handler(event, context):
     # Expect a JSON body with a 'prompt' field. Adjust if your API contract differs.

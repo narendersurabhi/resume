@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 env:
-  AWS_REGION: us-east-2
+  AWS_REGION: ${{ vars.AWS_REGION }}
   CDK_CONTEXT_ACCOUNT: ${{ secrets.AWS_ACCOUNT_ID }}
 
 jobs:

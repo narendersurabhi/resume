@@ -40,15 +40,14 @@ class BackendStack(Stack):
             removal_policy=RemovalPolicy.RETAIN,
         )
 
-        # Inference profile ARN (your Bedrock application inference profile)
-        inference_profile_arn = (
-            "arn:aws:bedrock:us-east-2:026654547457:application-inference-profile/zw6bj0p9104h"
-        )
+        allowed_origin = self.node.try_get_context("frontendOrigin") or "*"
+        inference_profile_arn = "arn:aws:bedrock:us-east-2:026654547457:application-inference-profile/zw6bj0p9104h"
 
         lambda_env = {
             "BUCKET_NAME": bucket.bucket_name,
             "TABLE_NAME": table.table_name,
-            "BEDROCK_INFERENCE_PROFILE_ARN": inference_profile_arn,
+            "BEDROCK_MODEL_ID": 'openai.gpt-oss-120b-1:0',
+            "ALLOWED_ORIGIN": allowed_origin,
             "OUTPUT_PREFIX": "generated",
         }
 
@@ -98,13 +97,17 @@ class BackendStack(Stack):
         table.grant_read_write_data(generate_function)
         table.grant_read_data(download_function)
 
-        # Bedrock permissions scoped to the inference profile
-        generate_function.add_to_role_policy(
-            iam.PolicyStatement(
-                actions=["bedrock:InvokeModel", "bedrock:InvokeModelWithResponseStream"],
-                resources=[inference_profile_arn],
-            )
-        )
+        profile_arn = "arn:aws:bedrock:us-east-2:026654547457:application-inference-profile/zw6bj0p9104h"
+        model_arn   = "arn:aws:bedrock:us-east-2::foundation-model/meta.llama3-3-70b-instruct-v1:0"
+
+        generate_function.add_to_role_policy(iam.PolicyStatement(
+            actions=[
+                "bedrock:InvokeModel",
+                "bedrock:InvokeModelWithResponseStream",
+            ],
+            resources=[profile_arn, model_arn,  # include both to satisfy checks
+                    "arn:aws:bedrock:us-east-2:026654547457:application-inference-profile/*"]
+        ))
 
         frontend_domain = "https://dbeuad68389xx.cloudfront.net"  # put your CF URL here
 

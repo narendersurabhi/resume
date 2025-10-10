@@ -1,0 +1,172 @@
+[4mGET-INFERENCE-PROFILE[24m()                                [4mGET-INFERENCE-PROFILE[24m()
+
+[1mNAME[0m
+       get-inference-profile -
+
+[1mDESCRIPTION[0m
+       Gets  information about an inference profile. For more information, see
+       [4mIncrease[24m [4mthroughput[24m [4mand[24m [4mresilience[24m [4mwith[24m [4mcross-region[24m [4minference[24m [4min[24m  [4mAma-[0m
+       [4mzon[24m [4mBedrock[24m . in the Amazon Bedrock User Guide.
+
+       See also: AWS API Documentation
+
+[1mSYNOPSIS[0m
+            get-inference-profile
+          --inference-profile-identifier <value>
+          [--cli-input-json <value>]
+          [--generate-cli-skeleton <value>]
+          [--debug]
+          [--endpoint-url <value>]
+          [--no-verify-ssl]
+          [--no-paginate]
+          [--output <value>]
+          [--query <value>]
+          [--profile <value>]
+          [--region <value>]
+          [--version <value>]
+          [--color <value>]
+          [--no-sign-request]
+          [--ca-bundle <value>]
+          [--cli-read-timeout <value>]
+          [--cli-connect-timeout <value>]
+
+[1mOPTIONS[0m
+       [1m--inference-profile-identifier [22m(string)
+          The ID or Amazon Resource Name (ARN) of the inference profile.
+
+       [1m--cli-input-json  [22m(string) Performs service operation based on the JSON
+       string provided. The JSON string follows the format provided by  [1m--gen-[0m
+       [1merate-cli-skeleton[22m.  If  other  arguments  are  provided on the command
+       line, the CLI values will override the JSON-provided values. It is  not
+       possible to pass arbitrary binary values using a JSON-provided value as
+       the string will be taken literally.
+
+       [1m--generate-cli-skeleton  [22m(string)  Prints  a  JSON skeleton to standard
+       output without sending an API request. If provided with no value or the
+       value [1minput[22m, prints a sample input JSON that can be used as an argument
+       for [1m--cli-input-json[22m. If provided with the value [1moutput[22m,  it  validates
+       the command inputs and returns a sample output JSON for that command.
+
+[1mGLOBAL OPTIONS[0m
+       [1m--debug [22m(boolean)
+
+       Turn on debug logging.
+
+       [1m--endpoint-url [22m(string)
+
+       Override command's default URL with the given URL.
+
+       [1m--no-verify-ssl [22m(boolean)
+
+       By  default, the AWS CLI uses SSL when communicating with AWS services.
+       For each SSL connection, the AWS CLI will verify SSL certificates. This
+       option overrides the default behavior of verifying SSL certificates.
+
+       [1m--no-paginate [22m(boolean)
+
+       Disable automatic pagination. If automatic pagination is disabled,  the
+       AWS CLI will only make one call, for the first page of results.
+
+       [1m--output [22m(string)
+
+       The formatting style for command output.
+
+       +o json
+
+       +o text
+
+       +o table
+
+       [1m--query [22m(string)
+
+       A JMESPath query to use in filtering the response data.
+
+       [1m--profile [22m(string)
+
+       Use a specific profile from your credential file.
+
+       [1m--region [22m(string)
+
+       The region to use. Overrides config/env settings.
+
+       [1m--version [22m(string)
+
+       Display the version of this tool.
+
+       [1m--color [22m(string)
+
+       Turn on/off color output.
+
+       +o on
+
+       +o off
+
+       +o auto
+
+       [1m--no-sign-request [22m(boolean)
+
+       Do  not  sign requests. Credentials will not be loaded if this argument
+       is provided.
+
+       [1m--ca-bundle [22m(string)
+
+       The CA certificate bundle to use when verifying SSL certificates. Over-
+       rides config/env settings.
+
+       [1m--cli-read-timeout [22m(int)
+
+       The maximum socket read time in seconds. If the value is set to 0,  the
+       socket  read  will be blocking and not timeout. The default value is 60
+       seconds.
+
+       [1m--cli-connect-timeout [22m(int)
+
+       The maximum socket connect time in seconds. If the value is set  to  0,
+       the  socket connect will be blocking and not timeout. The default value
+       is 60 seconds.
+
+[1mOUTPUT[0m
+       inferenceProfileName -> (string)
+          The name of the inference profile.
+
+       description -> (string)
+          The description of the inference profile.
+
+       createdAt -> (timestamp)
+          The time at which the inference profile was created.
+
+       updatedAt -> (timestamp)
+          The time at which the inference profile was last updated.
+
+       inferenceProfileArn -> (string)
+          The Amazon Resource Name (ARN) of the inference profile.
+
+       models -> (list)
+          A list of information about each model in the inference profile.
+
+          (structure)
+              Contains information about a model.
+
+              modelArn -> (string)
+                 The Amazon Resource Name (ARN) of the model.
+
+       inferenceProfileId -> (string)
+          The unique identifier of the inference profile.
+
+       status -> (string)
+          The status of the inference profile. [1mACTIVE [22mmeans that the inference
+          profile is ready to be used.
+
+       type -> (string)
+          The type of the inference profile. The following types are possible:
+
+          +o [1mSYSTEM_DEFINED   [22mThe  inference  profile  is  defined  by   Amazon
+            Bedrock.  You  can  route  inference  requests across regions with
+            these inference profiles.
+
+          +o [1mAPPLICATION  [22mThe inference profile was created  by  a  user.  This
+            type  of inference profile can track metrics and costs when invok-
+            ing the model in it. The inference profile may route  requests  to
+            one or multiple regions.
+
+                                                       [4mGET-INFERENCE-PROFILE[24m()
