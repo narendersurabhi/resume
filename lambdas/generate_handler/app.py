@@ -17,7 +17,8 @@ bedrock = boto3.client("bedrock-runtime", region_name=REGION)
 log.info(f"BEDROCK_MODEL_ID: {BEDROCK_MODEL_ID}")
 log.info(f"REGION: {REGION}")
 
-frontend_domain = "https://dbeuad68389xx.cloudfront.net"  # put your CF URL here
+CF_DIST_ID = os.getenv("CF_DIST_ID")
+frontend_domain = f"https://{CF_DIST_ID}.cloudfront.net"  # put your CF URL here
 
 def _cors_headers(origin="*"):
     return {
@@ -56,6 +57,6 @@ def handler(event, context):
 
     return {
         "statusCode": 200,
-        "headers": _cors_headers("https://dbeuad68389xx.cloudfront.net"),
+        "headers": _cors_headers(frontend_domain),
         "body": json.dumps({"text": output}),
     }

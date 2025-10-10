@@ -11,8 +11,8 @@ import boto3
 s3 = boto3.client("s3")
 
 BUCKET_NAME = os.environ["BUCKET_NAME"]
-
-frontend_domain = "https://dbeuad68389xx.cloudfront.net"  # put your CF URL here
+CF_DIST_ID = os.getenv("CF_DIST_ID")
+frontend_domain = f"https://{CF_DIST_ID}.cloudfront.net"  # put your CF URL here
 
 def _cors_headers(origin="*"):
     return {
@@ -24,7 +24,7 @@ def _cors_headers(origin="*"):
 def _response(status: int, body: Dict[str, Any]) -> Dict[str, Any]:
     return {
         "statusCode": status,
-        "headers": _cors_headers("https://dbeuad68389xx.cloudfront.net"), #{"Content-Type": "application/json"},
+        "headers": _cors_headers(frontend_domain), #{"Content-Type": "application/json"},
         "body": json.dumps(body),
     }
 

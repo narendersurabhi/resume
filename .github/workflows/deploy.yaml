@@ -68,6 +68,7 @@ jobs:
         env:
           CDK_DEFAULT_ACCOUNT: ${{ secrets.AWS_ACCOUNT_ID }}
           CDK_DEFAULT_REGION: ${{ env.AWS_REGION }}
+          CF_DIST_ID: ${{ vars.CF_DIST_ID }}
         run: |
           cdk deploy --app "python3.11 -m cdk.app" \
             ResumeAuthStack ResumeBackendStack ResumeFrontendStack \

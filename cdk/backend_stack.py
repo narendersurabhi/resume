@@ -12,6 +12,7 @@ from aws_cdk import (
     aws_s3 as s3,
 )
 from constructs import Construct
+import os
 
 
 class BackendStack(Stack):
@@ -19,6 +20,8 @@ class BackendStack(Stack):
 
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
+
+        cf_dist_id = os.getenv("CF_DIST_ID", "")
 
         # Storage
         bucket = s3.Bucket(
@@ -41,14 +44,13 @@ class BackendStack(Stack):
         )
 
         allowed_origin = self.node.try_get_context("frontendOrigin") or "*"
-        inference_profile_arn = "arn:aws:bedrock:us-east-2:026654547457:application-inference-profile/zw6bj0p9104h"
-
+        
         lambda_env = {
             "BUCKET_NAME": bucket.bucket_name,
             "TABLE_NAME": table.table_name,
             "BEDROCK_MODEL_ID": 'openai.gpt-oss-120b-1:0',
-            "ALLOWED_ORIGIN": allowed_origin,
-            "OUTPUT_PREFIX": "generated",
+            "OUTPUT_PREFIX": "generated",    
+            "CF_DIST_ID": cf_dist_id,
         }
 
         # Lambdas
@@ -97,19 +99,17 @@ class BackendStack(Stack):
         table.grant_read_write_data(generate_function)
         table.grant_read_data(download_function)
 
-        profile_arn = "arn:aws:bedrock:us-east-2:026654547457:application-inference-profile/zw6bj0p9104h"
-        model_arn   = "arn:aws:bedrock:us-east-2::foundation-model/meta.llama3-3-70b-instruct-v1:0"
-
         generate_function.add_to_role_policy(iam.PolicyStatement(
             actions=[
                 "bedrock:InvokeModel",
                 "bedrock:InvokeModelWithResponseStream",
             ],
-            resources=[profile_arn, model_arn,  # include both to satisfy checks
-                    "arn:aws:bedrock:us-east-2:026654547457:application-inference-profile/*"]
+            resources=[profile_arn, 
+                       model_arn, 
+                       "arn:aws:bedrock:us-east-2:026654547457:application-inference-profile/*"]
         ))
 
-        frontend_domain = "https://dbeuad68389xx.cloudfront.net"  # put your CF URL here
+        frontend_domain = f"https://{CF_DIST_ID}.cloudfront.net"  # put your CF URL here
 
         # API Gateway with permissive CORS (adjust as needed)
         api = apigateway.RestApi(
@@ -135,7 +135,7 @@ class BackendStack(Stack):
             "Default4xx",
             type=rtype_4xx,
             response_headers={
-                "Access-Control-Allow-Origin": "'https://dbeuad68389xx.cloudfront.net'",
+                "Access-Control-Allow-Origin": f"'https://{CF_DIST_ID}.cloudfront.net'",
                 "Access-Control-Allow-Headers": "'*'",
                 "Access-Control-Allow-Methods": "'GET,POST,OPTIONS'",
             },
@@ -144,7 +144,7 @@ class BackendStack(Stack):
             "Default5xx",
             type=rtype_5xx,
             response_headers={
-                "Access-Control-Allow-Origin": "'https://dbeuad68389xx.cloudfront.net'",
+                "Access-Control-Allow-Origin": f"'https://{CF_DIST_ID}.cloudfront.net'",
                 "Access-Control-Allow-Headers": "'*'",
                 "Access-Control-Allow-Methods": "'GET,POST,OPTIONS'",
             },
