@@ -15,6 +15,8 @@ log.setLevel(logging.INFO)
 
 BEDROCK_MODEL_ID = os.environ["BEDROCK_MODEL_ID"]
 REGION = os.environ.get("CDK_DEFAULT_REGION", "us-east-1")
+BUCKET_NAME = os.environ.get("BUCKET_NAME")
+
 bedrock = boto3.client("bedrock-runtime", region_name=REGION)
 s3 = boto3.client("s3", region_name=REGION)
 
