@@ -17,7 +17,12 @@ docker run --rm -v "$LAYER_DIR":/opt/layer \
     python -m pip install --upgrade pip &&
     pip install --no-cache-dir --only-binary=:all: \
       -t /opt/layer/python \
-      docxtpl==0.16.7 python-docx==1.1.2 jinja2==3.1.4 lxml==5.2.1
+      "lxml==5.2.1" \
+      "python-docx==1.1.2" \
+      "jinja2==3.1.4" \
+      "six>=1.16.0" \
+      "docxcompose==1.4.0" \
+      "docxtpl==0.16.7"
   '
 
 echo "Layer contents:"
