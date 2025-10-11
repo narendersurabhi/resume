@@ -54,17 +54,22 @@ def _invoke_bedrock(prompt: str) -> str:
 
 def handler(event, context):
     # Expect a JSON body with a 'prompt' field. Adjust if your API contract differs.
+    print("beginning of handler")
     body = json.loads(event.get("body") or "{}")
     resume = body.get("resumeText", "")
     job = body.get("jobDesc", "")
+
     if not resume or not job:
+        print("No resume or job")
         return {"statusCode": 400, "headers": _cors_headers(frontend_domain), "body": json.dumps({"message": "resumeText and jobDesc required"})}
 
     prompt = f"Tailor the following resume to this job.\n\nResume:\n{resume}\n\nJob:\n{job}\n\nReturn improved resume text."
 
     try:
         log.info("Invoking Bedrock via inference profile")
+        print("Before invoke")
         improved = _invoke_bedrock(prompt)
+        print("Afte invoke")
         log.info(improved)
         return {"statusCode": 200, "headers": _cors_headers(frontend_domain), "body": json.dumps({"result": improved})}
     except Exception as e:
