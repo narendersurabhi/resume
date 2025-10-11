@@ -25,6 +25,7 @@ def _cors_headers(origin="*"):
 
 def _invoke_bedrock(prompt: str) -> str:
 
+    log.info("prompt: " + prompt)
     body = {
         "messages": [
             {"role": "user", "content": [{"type": "text", "text": prompt}]}
@@ -32,15 +33,16 @@ def _invoke_bedrock(prompt: str) -> str:
         "max_tokens": 256,
         "temperature": 0.2
     }
-
+    log.info("body: " + body)
     resp = bedrock.invoke_model(
         modelId=BEDROCK_MODEL_ID,
         body=json.dumps(body),
         contentType="application/json",
         accept="application/json",
     )
-
+    log.info("Response: " + resp)
     out = json.loads(resp["body"].read())
+    log.info("Output: " + out["output"]["message"]["content"][0]["text"])
     return out["output"]["message"]["content"][0]["text"]
 
 def handler(event, context):
