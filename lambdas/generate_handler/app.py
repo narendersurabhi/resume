@@ -117,7 +117,7 @@ You are an expert technical resume writer. Rewrite and tailor the following resu
 Return a structured JSON object 
 that strictly follows this schema:
 
-{
+{{
   "name": "",
   "city": "",
   "state": "",
@@ -127,21 +127,21 @@ that strictly follows this schema:
   "summary": "",
   "skills": [ "..." ],
   "experience": [
-    {
+    {{
       "role": "",
       "company": "",
       "period": "",
       "bullets": ["..."],
       "initiatives": ["..."]
-    }
+    }}
   ],
   "certification": [
-    {"name": "", "issuedby": ""}
+    {{"name": "", "issuedby": ""}}
   ],
   "education": [
-    {"degree": "", "school": ""}
+    {{"degree": "", "school": ""}}
   ]
-}
+}}
 
 Do not include markdown, reasoning text, or commentary.
 Return only valid JSON.
