@@ -12,6 +12,7 @@ bedrock = boto3.client("bedrock-runtime", region_name=REGION)
 
 log.info(f"BEDROCK_MODEL_ID: {BEDROCK_MODEL_ID}")
 log.info(f"REGION: {REGION}")
+print("Start")
 
 CF_DIST_ID = os.getenv("CF_DIST_ID")
 frontend_domain = f"https://{CF_DIST_ID}.cloudfront.net"  # put your CF URL here
@@ -25,6 +26,7 @@ def _cors_headers(origin="*"):
 
 def _invoke_bedrock(prompt: str) -> str:
 
+    print("Invoke started")
     log.info("prompt: " + prompt)
     body = {
         "messages": [
@@ -43,6 +45,7 @@ def _invoke_bedrock(prompt: str) -> str:
     log.info("Response: " + resp)
     out = json.loads(resp["body"].read())
     log.info("Output: " + out["output"]["message"]["content"][0]["text"])
+    print("Invoke ended.")
     return out["output"]["message"]["content"][0]["text"]
 
 def handler(event, context):
