@@ -156,8 +156,7 @@ const Dashboard = ({ apiUrl }) => {
                   {output.docxUrl ? (
                     <a
                       href={output.docxUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                      download={`resume_${output.outputId}.docx`}
                       className="rounded bg-emerald-500 px-3 py-2 text-xs font-semibold text-slate-900 hover:bg-emerald-400"
                     >
                       Download DOCX
