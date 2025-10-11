@@ -11,17 +11,22 @@ mkdir -p "$OUT_DIR"
 
 # Build inside Lambda's Python 3.12 image (x86_64). For ARM, see note below.
 docker run --rm -v "$LAYER_DIR":/opt/layer \
-  --entrypoint /bin/bash \
-  public.ecr.aws/lambda/python:3.12 \
-  -lc '
-    python -m pip install --upgrade pip &&
+  --entrypoint /bin/bash public.ecr.aws/lambda/python:3.12 -lc '
+    set -e
+    python -m pip install --upgrade pip
+
+    # 1) Force a manylinux wheel for lxml (no compiling)
     pip install --no-cache-dir --only-binary=:all: \
       -t /opt/layer/python \
-      "lxml==5.2.1" \
+      "lxml==5.2.1"
+
+    # 2) Install pure-Python deps (allow sdists)
+    pip install --no-cache-dir \
+      -t /opt/layer/python \
       "python-docx==1.1.2" \
       "jinja2==3.1.4" \
       "six>=1.16.0" \
-      "docxcompose==1.4.0" \
+      "docxcompose>=1.3,<2.0" \
       "docxtpl==0.16.7"
   '
 
