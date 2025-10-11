@@ -1,5 +1,6 @@
 """Frontend hosting stack using S3 and CloudFront with dynamic config.json and export validation."""
 import json
+from datetime import datetime
 from aws_cdk import (
     RemovalPolicy,
     Stack,
@@ -17,6 +18,7 @@ from aws_cdk import (
 )
 from constructs import Construct
 
+timestamp = datetime.utcnow().isoformat()  # unique per deploy
 
 class FrontendStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
@@ -186,7 +188,8 @@ def handler(event, context):
                         }
                     }),
                 },
-                physical_resource_id=cr.PhysicalResourceId.of("WriteConfigJsonResource"),
+                # Changing PhysicalResourceId each deploy forces Lambda to re-run
+                physical_resource_id=cr.PhysicalResourceId.of(f"WriteConfigJson-{timestamp}"),                
             ),
             on_update=cr.AwsSdkCall(
                 service="Lambda",
@@ -206,7 +209,7 @@ def handler(event, context):
                         }
                     }),
                 },
-                physical_resource_id=cr.PhysicalResourceId.of("WriteConfigJsonResource"),
+                physical_resource_id=cr.PhysicalResourceId.of(f"WriteConfigJson-{timestamp}"),
             ),
             policy=cr.AwsCustomResourcePolicy.from_sdk_calls(
                 resources=cr.AwsCustomResourcePolicy.ANY_RESOURCE  # keep simple
