@@ -18,35 +18,63 @@ const Dashboard = ({ apiUrl }) => {
     }));
   };
 
-  const handleGenerated = async (result) => {
+  // === Option B: do NOT fetch download links automatically ===
+  const handleGenerated = (result) => {
     setGeneratedOutputs((prev) => [
       {
         ...result,
         createdAt: new Date().toISOString(),
+        docxUrl: null,
+        pdfUrl: null,
+        linksLoading: false,
+        linksError: null,
       },
       ...prev,
     ]);
-
-    const [docxUrl, pdfUrl] = await Promise.all([
-      axios.get(`${apiUrl}download`, { params: { key: result.docxKey } }),
-      axios.get(`${apiUrl}download`, { params: { key: result.pdfKey } }),
-    ]);
-
-    setGeneratedOutputs((prev) => [
-      {
-        ...result,
-        createdAt: new Date().toISOString(),
-        docxUrl: docxUrl.data.url,
-        pdfUrl: pdfUrl.data.url,
-      },
-      ...prev.filter((item) => item.outputId !== result.outputId),
-    ]);
   };
 
-  const preparedSelections = useMemo(() => ({
-    ...selections,
-    job: jobDescription ? { content: jobDescription } : selections.job,
-  }), [selections, jobDescription]);
+  const fetchLinks = async (out) => {
+    // fetch presigned links on demand
+    setGeneratedOutputs((prev) =>
+      prev.map((x) => (x.outputId === out.outputId ? { ...x, linksLoading: true, linksError: null } : x))
+    );
+    try {
+      const [docxRes, pdfRes] = await Promise.all([
+        axios.get(`${apiUrl}download`, { params: { key: out.docxKey } }),
+        axios.get(`${apiUrl}download`, { params: { key: out.pdfKey } }),
+      ]);
+      setGeneratedOutputs((prev) =>
+        prev.map((x) =>
+          x.outputId === out.outputId
+            ? {
+                ...x,
+                linksLoading: false,
+                docxUrl: docxRes.data.url,
+                pdfUrl: pdfRes.data.url,
+              }
+            : x
+        )
+      );
+    } catch (err) {
+      setGeneratedOutputs((prev) =>
+        prev.map((x) =>
+          x.outputId === out.outputId
+            ? { ...x, linksLoading: false, linksError: 'Failed to fetch download links' }
+            : x
+        )
+      );
+      // Optional: console.error for debugging
+      // console.error('fetchLinks error', err);
+    }
+  };
+
+  const preparedSelections = useMemo(
+    () => ({
+      ...selections,
+      job: jobDescription ? { content: jobDescription } : selections.job,
+    }),
+    [selections, jobDescription]
+  );
 
   return (
     <main className="mx-auto max-w-6xl space-y-10 p-6">
@@ -95,7 +123,12 @@ const Dashboard = ({ apiUrl }) => {
         />
       </section>
 
-      <GenerateButton apiUrl={apiUrl} tenantId={tenantId} selections={preparedSelections} onGenerated={handleGenerated} />
+      <GenerateButton
+        apiUrl={apiUrl}
+        tenantId={tenantId}
+        selections={preparedSelections}
+        onGenerated={handleGenerated}
+      />
 
       <section className="space-y-4">
         <h2 className="text-2xl font-semibold text-white">Generated Outputs</h2>
@@ -111,23 +144,35 @@ const Dashboard = ({ apiUrl }) => {
                 <div>
                   <p className="font-semibold">Output {output.outputId}</p>
                   <p className="text-xs text-slate-400">Generated {output.createdAt}</p>
+                  {output.linksError && (
+                    <p className="mt-1 text-xs text-rose-400">{output.linksError}</p>
+                  )}
                 </div>
                 <div className="flex gap-2">
-                  {output.docxUrl && (
+                  {output.docxUrl ? (
                     <a
                       href={output.docxUrl}
                       className="rounded bg-emerald-500 px-3 py-2 text-xs font-semibold text-slate-900 hover:bg-emerald-400"
                     >
                       Download DOCX
                     </a>
-                  )}
-                  {output.pdfUrl && (
+                  ) : null}
+                  {output.pdfUrl ? (
                     <a
                       href={output.pdfUrl}
                       className="rounded bg-indigo-500 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-400"
                     >
                       Download PDF
                     </a>
+                  ) : null}
+                  {!output.docxUrl && !output.pdfUrl && (
+                    <button
+                      onClick={() => fetchLinks(output)}
+                      disabled={output.linksLoading}
+                      className="rounded bg-slate-700 px-3 py-2 text-xs font-semibold hover:bg-slate-600 disabled:opacity-60"
+                    >
+                      {output.linksLoading ? 'Fetching links…' : 'Get download links'}
+                    </button>
                   )}
                 </div>
               </li>
