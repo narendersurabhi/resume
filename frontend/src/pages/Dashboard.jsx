@@ -113,16 +113,19 @@ const Dashboard = ({ apiUrl }) => {
         <ResumeList
           title="Approved Resumes"
           items={uploads.approved}
+          selected={selections.resume}
           onSelect={(item) => setSelections((prev) => ({ ...prev, resume: item }))}
         />
         <ResumeList
           title="Templates"
           items={uploads.template}
+          selected={selections.template}
           onSelect={(item) => setSelections((prev) => ({ ...prev, template: item }))}
         />
         <ResumeList
           title="Job Descriptions"
           items={uploads.jobs}
+          selected={selections.job}
           onSelect={(item) => setSelections((prev) => ({ ...prev, job: item }))}
         />
       </section>
