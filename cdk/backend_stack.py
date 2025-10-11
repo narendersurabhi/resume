@@ -139,18 +139,18 @@ class BackendStack(Stack):
             "Default4xx",
             type=rtype_4xx,
             response_headers={
-                "Access-Control-Allow-Origin": frontend_domain,
-                "Access-Control-Allow-Headers": "*",
-                "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+                "Access-Control-Allow-Origin": f"'{frontend_domain}'",
+                "Access-Control-Allow-Headers": "'*'",
+                "Access-Control-Allow-Methods": "'GET,POST,OPTIONS'",
             },
         )
         api.add_gateway_response(
             "Default5xx",
             type=rtype_5xx,
             response_headers={
-                "Access-Control-Allow-Origin": frontend_domain,
-                "Access-Control-Allow-Headers": "*",
-                "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+                "Access-Control-Allow-Origin": f"'{frontend_domain}'",
+                "Access-Control-Allow-Headers": "'*'",
+                "Access-Control-Allow-Methods": "'GET,POST,OPTIONS'",
             },
         )
 
