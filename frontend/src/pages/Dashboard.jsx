@@ -34,58 +34,42 @@ const Dashboard = ({ apiUrl }) => {
   };
 
   const fetchLinks = async (out) => {
-    // fetch presigned links on demand
-    setGeneratedOutputs((prev) =>
-      prev.map((x) => (x.outputId === out.outputId ? { ...x, linksLoading: true, linksError: null } : x))
+    setGeneratedOutputs(prev =>
+      prev.map(x => x.outputId === out.outputId ? { ...x, linksLoading: true, linksError: null } : x)
     );
 
     try {
-      
-      const requests = [];
+      const url = (p) => new URL(p, apiUrl).href;   // safe with/without trailing slash
+      const reqs = [];
+      const index = {}; // track positions
 
-      if (out.docxKey) {
-        requests.push(
-          axios.get(`${apiUrl}/download`, { params: { key: out.docxKey } })
-        );
+      if (out.docxKey) { index.docx = reqs.length;
+        reqs.push(axios.get(url('download'), { params: { key: out.docxKey } }));
+      }
+      if (out.pdfKey)  { index.pdf  = reqs.length;
+        reqs.push(axios.get(url('download'), { params: { key: out.pdfKey } }));
       }
 
-      if (out.pdfKey) {
-        requests.push(
-          axios.get(`${apiUrl}/download`, { params: { key: out.pdfKey } })
-        );
-      }
+      const results = await Promise.allSettled(reqs);
+      const docxRes = index.docx !== undefined ? results[index.docx] : null;
+      const pdfRes  = index.pdf  !== undefined ? results[index.pdf]  : null;
 
-      const [docxRes, pdfRes] = await Promise.all(requests);      
+      const docxUrl = docxRes?.status === 'fulfilled' ? docxRes.value?.data?.url : null;
+      const pdfUrl  = pdfRes?.status  === 'fulfilled' ? pdfRes.value?.data?.url  : null;
 
-      // const [docxRes, pdfRes] = await Promise.all([
-      //   axios.get(`${apiUrl}download`, { params: { key: out.docxKey } }),
-      //   axios.get(`${apiUrl}download`, { params: { key: out.pdfKey } }),
-      // ]);
-      
-      setGeneratedOutputs((prev) =>
-        prev.map((x) =>
-          x.outputId === out.outputId
-            ? {
-                ...x,
-                linksLoading: false,
-                docxUrl: docxRes.data.url,
-                pdfUrl: pdfRes.data.url,
-              }
-            : x
-        )
+      setGeneratedOutputs(prev =>
+        prev.map(x => x.outputId === out.outputId
+          ? { ...x, linksLoading: false, linksError: (!docxUrl && out.docxKey) || (!pdfUrl && out.pdfKey) ? 'Failed to fetch some links' : null,
+              docxUrl, pdfUrl }
+          : x)
       );
-    } catch (err) {
-      setGeneratedOutputs((prev) =>
-        prev.map((x) =>
-          x.outputId === out.outputId
-            ? { ...x, linksLoading: false, linksError: 'Failed to fetch download links' }
-            : x
-        )
+    } catch (e) {
+      setGeneratedOutputs(prev =>
+        prev.map(x => x.outputId === out.outputId ? { ...x, linksLoading: false, linksError: 'Failed to fetch download links' } : x)
       );
-      // Optional: console.error for debugging
-      // console.error('fetchLinks error', err);
     }
   };
+
 
   const preparedSelections = useMemo(
     () => ({
