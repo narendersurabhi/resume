@@ -145,53 +145,72 @@ def handler(event, context):
         )
         deploy.node.add_dependency(distribution)
 
-        write_cfg = cr.AwsCustomResource(
-            self, "WriteConfigJson",
-            on_create=cr.AwsSdkCall(
-                service="Lambda",
-                action="invoke",
-                parameters={
-                    "FunctionName": config_writer.function_name,
-                    "InvocationType": "Event",
-                    "Payload": json.dumps({
-                        "RequestType": "Create",
-                        "ResourceProperties": {
-                            "apiUrl": Fn.import_value("ResumeApiUrl"),
-                            "userPoolId": Fn.import_value("ResumeUserPoolId"),
-                            "userPoolClientId": Fn.import_value("ResumeUserPoolClientId"),
-                            "identityPoolId": Fn.import_value("ResumeIdentityPoolId"),
-                            "region": self.region,
-                            "bucketName": site_bucket.bucket_name,
-                        }
-                    }),
-                },
-                physical_resource_id=cr.PhysicalResourceId.of("WriteConfigJsonResource"),
-            ),
-            on_update=cr.AwsSdkCall(
-                service="Lambda",
-                action="invoke",
-                parameters={  # same as above, RequestType "Update"
-                    "FunctionName": config_writer.function_name,
-                    "InvocationType": "Event",
-                    "Payload": json.dumps({
-                        "RequestType": "Update",
-                        "ResourceProperties": {
-                            "apiUrl": Fn.import_value("ResumeApiUrl"),
-                            "userPoolId": Fn.import_value("ResumeUserPoolId"),
-                            "userPoolClientId": Fn.import_value("ResumeUserPoolClientId"),
-                            "identityPoolId": Fn.import_value("ResumeIdentityPoolId"),
-                            "region": self.region,
-                            "bucketName": site_bucket.bucket_name,
-                        }
-                    }),
-                },
-                physical_resource_id=cr.PhysicalResourceId.of("WriteConfigJsonResource"),
-            ),
-            policy=cr.AwsCustomResourcePolicy.from_sdk_calls(
-                resources=cr.AwsCustomResourcePolicy.ANY_RESOURCE  # keep simple
-            ),
+        runtime_config = {
+            "apiUrl": Fn.import_value("ResumeApiUrl"),
+            "userPoolId": Fn.import_value("ResumeUserPoolId"),
+            "userPoolClientId": Fn.import_value("ResumeUserPoolClientId"),
+            "identityPoolId": Fn.import_value("ResumeIdentityPoolId"),
+            "region": self.region,
+            "bucketName": site_bucket.bucket_name,
+        }
+
+        s3deploy.BucketDeployment(
+            self, "FrontendAssets",
+            sources=[
+                s3deploy.Source.data("config.json", json.dumps(runtime_config, indent=2)),
+            ],
+            destination_bucket=site_bucket,
+            distribution=distribution,
+            distribution_paths=["/config.json"],
+            metadata={"Cache-Control": "no-store"},  # for config.json
         )
-        write_cfg.node.add_dependency(deploy)
+
+        # write_cfg = cr.AwsCustomResource(
+        #     self, "WriteConfigJson",
+        #     on_create=cr.AwsSdkCall(
+        #         service="Lambda",
+        #         action="invoke",
+        #         parameters={
+        #             "FunctionName": config_writer.function_name,
+        #             "InvocationType": "Event",
+        #             "Payload": json.dumps({
+        #                 "RequestType": "Create",
+        #                 "ResourceProperties": {
+        #                     "apiUrl": Fn.import_value("ResumeApiUrl"),
+        #                     "userPoolId": Fn.import_value("ResumeUserPoolId"),
+        #                     "userPoolClientId": Fn.import_value("ResumeUserPoolClientId"),
+        #                     "identityPoolId": Fn.import_value("ResumeIdentityPoolId"),
+        #                     "region": self.region,
+        #                     "bucketName": site_bucket.bucket_name,
+        #                 }
+        #             }),
+        #         },
+        #         physical_resource_id=cr.PhysicalResourceId.of("WriteConfigJsonResource"),
+        #     ),
+        #     on_update=cr.AwsSdkCall(
+        #         service="Lambda",
+        #         action="invoke",
+        #         parameters={  # same as above, RequestType "Update"
+        #             "FunctionName": config_writer.function_name,
+        #             "InvocationType": "Event",
+        #             "Payload": json.dumps({
+        #                 "RequestType": "Update",
+        #                 "ResourceProperties": {
+        #                     "apiUrl": Fn.import_value("ResumeApiUrl"),
+        #                     "userPoolId": Fn.import_value("ResumeUserPoolId"),
+        #                     "userPoolClientId": Fn.import_value("ResumeUserPoolClientId"),
+        #                     "identityPoolId": Fn.import_value("ResumeIdentityPoolId"),
+        #                     "region": self.region,
+        #                     "bucketName": site_bucket.bucket_name,
+        #                 }
+        #             }),
+        #         },
+        #         physical_resource_id=cr.PhysicalResourceId.of("WriteConfigJsonResource"),
+        #     ),
+        #     policy=cr.AwsCustomResourcePolicy.from_sdk_calls(
+        #         resources=cr.AwsCustomResourcePolicy.ANY_RESOURCE  # keep simple
+        #     ),
+        # )
 
         # --- Outputs ---
         CfnOutput(self, "CloudFrontDomain", value=distribution.distribution_domain_name)
