@@ -36,12 +36,16 @@ def _invoke_bedrock(prompt: str) -> str:
         "temperature": 0.2
     }
     log.info("body: " + body)
-    resp = bedrock.invoke_model(
-        modelId=BEDROCK_MODEL_ID,
-        body=json.dumps(body),
-        contentType="application/json",
-        accept="application/json",
-    )
+    try:
+        resp = bedrock.invoke_model(
+            modelId=BEDROCK_MODEL_ID,
+            body=json.dumps(body),
+            contentType="application/json",
+            accept="application/json",
+        )
+    except Exception as e:
+        print(e)
+
     log.info("Response: " + resp)
     out = json.loads(resp["body"].read())
     log.info("Output: " + out["output"]["message"]["content"][0]["text"])
