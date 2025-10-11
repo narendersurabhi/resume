@@ -63,7 +63,7 @@ def _get_text_from_s3(key: str) -> str:
 def _invoke_bedrock(prompt: str) -> str:
 
     print("Invoke started")
-    log.info("prompt: " + prompt)
+    print("prompt: " + prompt)
     body = {
         "messages": [
             {"role": "user", "content": [{"type": "text", "text": prompt}]}
@@ -71,7 +71,7 @@ def _invoke_bedrock(prompt: str) -> str:
         "max_tokens": 8000,
         "temperature": 0.2
     }
-    log.info(f"body: {body}")
+    print(f"body: {body}")
     try:
         resp = bedrock.invoke_model(
             modelId=BEDROCK_MODEL_ID,
@@ -82,11 +82,21 @@ def _invoke_bedrock(prompt: str) -> str:
     except Exception as e:
         print(e)
 
-    print(f"Response: {resp}")
-    out = json.loads(resp["body"].read())
-    print(f"Output: {out["output"]["message"]["content"][0]["text"]}")
-    print("Invoke ended.")
-    return out["output"]["message"]["content"][0]["text"]
+    print("Invoke compelte")
+    
+    raw = resp["body"].read().decode("utf-8")
+    print("Bedrock raw:", raw)
+    out = json.loads(raw)
+
+    # OpenAI-compatible extraction
+    if "choices" in out and out["choices"]:
+        msg = out["choices"][0].get("message", {})
+        content = msg.get("content")
+        if isinstance(content, str) and content.strip():
+            return content
+
+    # If we get here, the response isn't what we expected
+    raise RuntimeError(f"Unexpected OpenAI-style response: {out}")
 
 def handler(event, context):
     # Expect a JSON body with a 'prompt' field. Adjust if your API contract differs.
