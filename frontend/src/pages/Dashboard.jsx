@@ -10,6 +10,29 @@ const Dashboard = ({ apiUrl }) => {
   const [selections, setSelections] = useState({ resume: null, template: null, job: null });
   const [jobDescription, setJobDescription] = useState('');
   const [generatedOutputs, setGeneratedOutputs] = useState([]);
+  const [downloadingDocxId, setDownloadingDocxId] = useState(null);
+  // Download DOCX in background
+  const handleDownloadDocx = async (output) => {
+    if (!output.docxKey) return;
+    setDownloadingDocxId(output.outputId);
+    try {
+      const url = new URL('download', apiUrl).href;
+      const response = await axios.get(url, {
+        params: { key: output.docxKey },
+        responseType: 'blob',
+      });
+      const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+      const link = document.createElement('a');
+      link.href = window.URL.createObjectURL(blob);
+      link.download = `resume_${output.outputId}.docx`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      alert('Failed to download DOCX.');
+    }
+    setDownloadingDocxId(null);
+  };
 
   const handleUploadComplete = (item) => {
     setUploads((prev) => ({
@@ -153,12 +176,13 @@ const Dashboard = ({ apiUrl }) => {
                 </div>
                 <div className="flex gap-2">
                   {output.docxUrl ? (
-                    <a
-                      href={output.docxUrl}
-                      className="rounded bg-emerald-500 px-3 py-2 text-xs font-semibold text-slate-900 hover:bg-emerald-400"
+                    <button
+                      onClick={() => handleDownloadDocx(output)}
+                      disabled={downloadingDocxId === output.outputId}
+                      className="rounded bg-emerald-500 px-3 py-2 text-xs font-semibold text-slate-900 hover:bg-emerald-400 disabled:opacity-60"
                     >
-                      Download DOCX
-                    </a>
+                      {downloadingDocxId === output.outputId ? 'Downloading…' : 'Download DOCX'}
+                    </button>
                   ) : null}
                   {output.pdfUrl ? (
                     <a
