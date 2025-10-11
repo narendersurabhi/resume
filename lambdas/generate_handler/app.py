@@ -80,10 +80,16 @@ Job Description:
 """.strip()
 
     body = {
-        # works with GPT-OSS via invoke_model
-        "inputText": prompt,
-        "maxTokens": 4096,
-        "temperature": 0.4
+        "messages": [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": prompt}
+                ]
+            }
+        ],
+        "max_tokens": 2048,
+        "temperature": 0.3
     }
 
     resp = bedrock.invoke_model(
@@ -93,7 +99,7 @@ Job Description:
         accept="application/json",
     )
     payload = json.loads(resp["body"].read())
-
+    print("payload", payload)
     # GPT-OSS returns: {"outputs":[{"text":"<json>"}], ...}
     text = ""
     if isinstance(payload, dict):
