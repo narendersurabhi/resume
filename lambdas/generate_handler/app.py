@@ -13,6 +13,23 @@ REGION = os.environ.get("CDK_DEFAULT_REGION", os.environ.get("AWS_REGION", "us-e
 s3 = boto3.client("s3")
 bedrock = boto3.client("bedrock-runtime", region_name=REGION)
 
+REQUIRED_KEYS = {
+    "name",
+    "title",
+    "contact",
+    "city",
+    "state",
+    "zip",
+    "phone",
+    "email",
+    "summary",
+    "skills",
+    "experience",
+    "education",
+    "certification",   # singular (matches your template loop)
+}
+
+
 # ---------- helpers ----------
 def _cors_headers(origin):
     return {
@@ -53,24 +70,81 @@ def extract_text(payload: dict) -> str:
     return ""
 
 
+def extract_structured(payload: dict) -> dict:
+    # 1) get content string
+    content = (
+        payload.get("choices", [{}])[0]
+        .get("message", {})
+        .get("content", "")
+    )
+    if not isinstance(content, str):
+        raise ValueError("No textual content in model response")
+
+    # 2) strip any <reasoning>… blocks
+    content = re.sub(r"<reasoning>.*?</reasoning>\s*", "", content, flags=re.S)
+
+    # 3) strip accidental markdown fences
+    content = re.sub(r"^```(?:json)?\s*|\s*```$", "", content.strip(), flags=re.MULTILINE)
+
+    # 4) pull the JSON object from the string
+    start = content.find("{")
+    end   = content.rfind("}")
+    if start == -1 or end == -1 or end <= start:
+        raise ValueError("No JSON object found in content")
+    json_str = content[start:end+1]
+
+    # 5) parse JSON
+    data = json.loads(json_str)
+
+    # 6) basic schema check
+    missing = REQUIRED_KEYS - set(data.keys())
+    if missing:
+        # raise ValueError(f"Missing keys in model output: {sorted(missing)}")
+        print(f"Missing keys in model output: {sorted(missing)}")
+
+    # optional: normalize types
+    # for k in ("skills","certifications"):
+    #     if isinstance(data.get(k), str):
+    #         data[k] = [data[k]]
+    return data
+
+
 def _invoke_bedrock_structured(resume_text: str, job_text: str) -> dict:
     # JSON-only prompt
     prompt = f"""
 You are an expert technical resume writer. Rewrite and tailor the following resume for the given job description.
 
-Return ONLY valid JSON with this schema:
-{{
-  "name": "...",
-  "title": "...",
-  "contact": "...",
-  "summary": "...",
-  "skills": ["..."],
+Return a structured JSON object 
+that strictly follows this schema:
+
+{
+  "name": "",
+  "city": "",
+  "state": "",
+  "zip": "",
+  "phone": "",
+  "email": "",
+  "summary": "",
+  "skills": [ "..." ],
   "experience": [
-    {{"company": "...", "role": "...", "period": "...", "bullets": ["..."]}}
+    {
+      "role": "",
+      "company": "",
+      "period": "",
+      "bullets": ["..."],
+      "initiatives": ["..."]
+    }
   ],
-  "education": [{{"degree": "...", "school": "..."}}],
-  "certifications": ["..."]
-}}
+  "certification": [
+    {"name": "", "issuedby": ""}
+  ],
+  "education": [
+    {"degree": "", "school": ""}
+  ]
+}
+
+Do not include markdown, reasoning text, or commentary.
+Return only valid JSON.
 
 Resume:
 {resume_text}
@@ -101,20 +175,14 @@ Job Description:
     payload = json.loads(resp["body"].read())
     print("payload", payload)
     # GPT-OSS returns: {"outputs":[{"text":"<json>"}], ...}
-    text = ""
-    if isinstance(payload, dict):
-        if "outputs" in payload and payload["outputs"]:
-            text = payload["outputs"][0].get("text", "")
-        elif "outputText" in payload:
-            text = payload["outputText"]
+    
 
-    # strip accidental markdown fences
-    text = re.sub(r"^```(?:json)?\s*|\s*```$", "", text.strip(), flags=re.MULTILINE)
-
-    try:
-        return json.loads(text)
+    try:    
+        data = extract_structured(payload)
+        # docx_path = render_docx_from_json(data, template_path="/opt/resume_template.docx")
+        return data
     except Exception as e:
-        log.error("Model did not return valid JSON. raw: %s", text[:1000])
+        log.error("Model did not return valid JSON. raw: %s", data[:1000])
         raise
 
 def _render_docx(structured: dict, template_bytes: bytes) -> bytes:
