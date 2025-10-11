@@ -68,10 +68,10 @@ def _invoke_bedrock(prompt: str) -> str:
         "messages": [
             {"role": "user", "content": [{"type": "text", "text": prompt}]}
         ],
-        "max_tokens": 256,
+        "max_tokens": 8000,
         "temperature": 0.2
     }
-    log.info("body: " + body)
+    log.info(f"body: {body}")
     try:
         resp = bedrock.invoke_model(
             modelId=BEDROCK_MODEL_ID,
@@ -82,9 +82,9 @@ def _invoke_bedrock(prompt: str) -> str:
     except Exception as e:
         print(e)
 
-    log.info("Response: " + resp)
+    print(f"Response: {resp}")
     out = json.loads(resp["body"].read())
-    log.info("Output: " + out["output"]["message"]["content"][0]["text"])
+    print(f"Output: {out["output"]["message"]["content"][0]["text"]}")
     print("Invoke ended.")
     return out["output"]["message"]["content"][0]["text"]
 
