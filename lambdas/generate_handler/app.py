@@ -48,10 +48,13 @@ def _download_s3_bytes(key: str) -> bytes:
     return obj["Body"].read()
 
 def _upload_bytes(key: str, body: bytes, content_type: str):
-    s3.put_object(
-        Bucket=BUCKET_NAME, Key=key, Body=body,
-        ContentType=content_type, CacheControl="no-cache",
-    )
+    try:
+        s3.put_object(
+            Bucket=BUCKET_NAME, Key=key, Body=body,
+            ContentType=content_type, CacheControl="no-cache",
+        )
+    except Exception as e:
+        print("Upload failed: ", e)
 
 def extract_text(payload: dict) -> str:
     # GPT-OSS (Bedrock OpenAI-compat): {"outputs":[{"text":"..."}], ...}

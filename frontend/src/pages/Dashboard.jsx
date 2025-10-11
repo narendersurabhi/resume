@@ -38,11 +38,30 @@ const Dashboard = ({ apiUrl }) => {
     setGeneratedOutputs((prev) =>
       prev.map((x) => (x.outputId === out.outputId ? { ...x, linksLoading: true, linksError: null } : x))
     );
+
     try {
-      const [docxRes, pdfRes] = await Promise.all([
-        axios.get(`${apiUrl}download`, { params: { key: out.docxKey } }),
-        axios.get(`${apiUrl}download`, { params: { key: out.pdfKey } }),
-      ]);
+      
+      const requests = [];
+
+      if (out.docxKey) {
+        requests.push(
+          axios.get(`${apiUrl}/download`, { params: { key: out.docxKey } })
+        );
+      }
+
+      if (out.pdfKey) {
+        requests.push(
+          axios.get(`${apiUrl}/download`, { params: { key: out.pdfKey } })
+        );
+      }
+
+      const [docxRes, pdfRes] = await Promise.all(requests);      
+
+      // const [docxRes, pdfRes] = await Promise.all([
+      //   axios.get(`${apiUrl}download`, { params: { key: out.docxKey } }),
+      //   axios.get(`${apiUrl}download`, { params: { key: out.pdfKey } }),
+      // ]);
+      
       setGeneratedOutputs((prev) =>
         prev.map((x) =>
           x.outputId === out.outputId
