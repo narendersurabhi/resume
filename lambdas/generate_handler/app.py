@@ -56,8 +56,11 @@ def handler(event, context):
     # Expect a JSON body with a 'prompt' field. Adjust if your API contract differs.
     print("beginning of handler")
     body = json.loads(event.get("body") or "{}")
+    print("body: " + body)
     resume = body.get("resumeText", "")
+    print("resume: " + resume)
     job = body.get("jobDesc", "")
+    print("jobDesc: " + job)
 
     if not resume or not job:
         print("No resume or job")
