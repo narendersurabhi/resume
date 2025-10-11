@@ -55,7 +55,16 @@ class BackendStack(Stack):
             "CDK_DEFAULT_REGION": CDK_DEFAULT_REGION,
         }
 
+        # layer
+        docx_layer = lambda_.LayerVersion(
+            self, "DocxLayer",
+            code=lambda_.Code.from_asset("layers/docx_layer/layer.zip"),
+            compatible_runtimes=[lambda_.Runtime.PYTHON_3_12],
+            description="python-docx + lxml"
+        )
+
         # Lambdas
+
         upload_function = lambda_.Function(
             self,
             "ResumeUploadFunction",
@@ -78,6 +87,7 @@ class BackendStack(Stack):
             timeout=Duration.minutes(15),
             log_retention=logs.RetentionDays.ONE_MONTH,
             environment=lambda_env,
+            layers=[docx_layer], 
         )
 
         download_function = lambda_.Function(
@@ -101,7 +111,7 @@ class BackendStack(Stack):
         table.grant_read_write_data(generate_function)
         table.grant_read_data(download_function)
 
-        generate_function.add_to_role_policy(iam.PolicyStatement(actions=["bedrock:InvokeModel"], resources=[f"arn:aws:bedrock:{CDK_DEFAULT_REGION}::foundation-model/openai.gpt-oss-120b-1:0"]))
+        generate_function.add_to_role_policy(iam.PolicyStatement(actions=["bedrock:InvokeModel"], resources=[f"arn:aws:bedrock:{self.region}::foundation-model/openai.gpt-oss-120b-1:0"]))
 
         frontend_domain = f"https://{cf_dist_id}.cloudfront.net"  # put your CF URL here
 
@@ -129,18 +139,18 @@ class BackendStack(Stack):
             "Default4xx",
             type=rtype_4xx,
             response_headers={
-                "Access-Control-Allow-Origin": f"'https://{cf_dist_id}.cloudfront.net'",
-                "Access-Control-Allow-Headers": "'*'",
-                "Access-Control-Allow-Methods": "'GET,POST,OPTIONS'",
+                "Access-Control-Allow-Origin": frontend_domain,
+                "Access-Control-Allow-Headers": "*",
+                "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
             },
         )
         api.add_gateway_response(
             "Default5xx",
             type=rtype_5xx,
             response_headers={
-                "Access-Control-Allow-Origin": f"'https://{cf_dist_id}.cloudfront.net'",
-                "Access-Control-Allow-Headers": "'*'",
-                "Access-Control-Allow-Methods": "'GET,POST,OPTIONS'",
+                "Access-Control-Allow-Origin": frontend_domain,
+                "Access-Control-Allow-Headers": "*",
+                "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
             },
         )
 
