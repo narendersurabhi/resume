@@ -109,6 +109,7 @@ def extract_structured(payload: dict) -> dict:
     # for k in ("skills","certifications"):
     #     if isinstance(data.get(k), str):
     #         data[k] = [data[k]]
+    print("Structured Data: ", data)
     return data
 
 
