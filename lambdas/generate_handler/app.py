@@ -117,42 +117,58 @@ def _invoke_bedrock_structured(resume_text: str, job_text: str) -> dict:
     prompt = f"""
 You are an expert technical resume writer. Rewrite and tailor the following resume for the given job description.
 
-Return a structured JSON object 
-that strictly follows this schema:
+Output
+Return ONLY valid JSON matching this exact schema and key names:
 
 {{
   "name": "",
+  "title": "",
   "city": "",
   "state": "",
   "zip": "",
   "phone": "",
   "email": "",
+  "links": ["..."],
   "summary": "",
-  "skills": [ "..." ],
-  "experience": [
-    {{
-      "role": "",
-      "company": "",
-      "period": "",
-      "bullets": ["..."],
-      "initiatives": ["..."]
-    }}
+  "skills": [
+    {{"group": "", "items": ["...", "..."]}}
   ],
-  "certification": [
-    {{"name": "", "issuedby": ""}}
+  "experience": [
+    {{"role": "", "company": "", "location": "", "period": "", "bullets": ["..."], "initiatives": ["..."] }}
+  ],
+  "projects": [
+    {{"name": "", "period": "", "bullets": ["..."] }}
   ],
   "education": [
-    {{"degree": "", "school": ""}}
-  ]
+    {{"degree": "", "school": "", "location": "", "period": "", "bullets": ["..."] }}
+  ],
+  "certifications": [
+    {{"name": "", "issuer": "", "year": "" }}
+  ],
+  "awards": ["..."]
 }}
+
+
+Formatting rules
+- Bullets are single-line, action-first, impact-focused. No markdown.
+- “period” fields are compact, e.g., "2016-Present".
+- Use at most 6-10 bullets per recent role, 3-5 for older roles.
+- Group skills by theme with 5-12 items each. Use JOB_DESCRIPTION wording when truthful.
+- Omit empty sections. Keep key names even if arrays are empty.
+
+Validation
+- Must be parseable JSON.
+- Dates, employers, degrees, and certifications must match REFERENCE_RESUME_TEXT.
+- Phone and email must match or be blank if absent.
+- If REFERENCE_RESUME_TEXT lacks a section, emit an empty array for that section.
 
 Do not include markdown, reasoning text, or commentary.
 Return only valid JSON.
 
-Resume:
+REFERENCE_RESUME_TEXT:
 {resume_text}
 
-Job Description:
+JOB_DESCRIPTION:
 {job_text}
 """.strip()
 
