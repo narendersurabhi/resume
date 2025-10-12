@@ -181,7 +181,7 @@ JOB_DESCRIPTION:
                 ]
             }
         ],
-        "max_tokens": 2048,
+        "max_tokens": 8000,
         "temperature": 0.3
     }
 
@@ -201,7 +201,7 @@ JOB_DESCRIPTION:
         # docx_path = render_docx_from_json(data, template_path="/opt/resume_template.docx")
         return data
     except Exception as e:
-        log.error("Model did not return valid JSON. raw: %s", data[:1000])
+        log.error("Model did not return valid JSON: %s", e)
         raise
 
 def _render_docx(structured: dict, template_bytes: bytes) -> bytes:
