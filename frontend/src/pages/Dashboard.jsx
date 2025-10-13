@@ -11,6 +11,7 @@ const Dashboard = ({ apiUrl }) => {
   const [jobDescription, setJobDescription] = useState('');
   const [generatedOutputs, setGeneratedOutputs] = useState([]);
   const fileInputRef = React.useRef();
+  const templateFileInputRef = React.useRef();
   // No background download needed; use presigned URL directly
 
   const handleUploadComplete = (item) => {
@@ -81,6 +82,41 @@ const Dashboard = ({ apiUrl }) => {
     [selections, jobDescription]
   );
 
+  // Handle file selection and upload for Template
+  const handleTemplateFileChange = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    const toBase64 = (inputFile) => new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(inputFile);
+      reader.onload = () => {
+        const result = reader.result;
+        resolve(result.split(',')[1]);
+      };
+      reader.onerror = (error) => reject(error);
+    });
+    try {
+      const content = await toBase64(file);
+      const response = await axios.post(`${apiUrl}upload`, {
+        fileName: file.name,
+        fileType: file.type,
+        content,
+        tenantId,
+        category: 'template',
+      });
+      handleUploadComplete({
+        ...response.data,
+        fileName: file.name,
+        key: response.data.key || file.name,
+        category: 'template',
+      });
+    } catch (error) {
+      alert('Failed to upload template.');
+    }
+    // Reset file input value so same file can be selected again
+    event.target.value = '';
+  };
+
   // Handle file selection and upload for Approved Resume
   const handleResumeFileChange = async (event) => {
     const file = event.target.files[0];
@@ -124,73 +160,93 @@ const Dashboard = ({ apiUrl }) => {
         </p>
       </header>
 
-      <section className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <UploadForm apiUrl={apiUrl} tenantId={tenantId} onUploadComplete={handleUploadComplete} />
-        <div className="rounded-lg bg-slate-900 p-6 shadow md:col-span-1 lg:col-span-2">
-          <label htmlFor="job-description" className="block text-sm font-medium text-slate-300">
-            Job Description
-          </label>
-          <textarea
-            id="job-description"
-            rows={8}
-            value={jobDescription}
-            onChange={(event) => setJobDescription(event.target.value)}
-            className="mt-2 w-full rounded border border-slate-700 bg-slate-800 p-3 text-sm text-slate-100"
-            placeholder="Paste the job description here"
+      <section className="grid gap-6 grid-cols-1 md:grid-cols-[350px_1fr] lg:grid-cols-[400px_1fr]">
+        <div className="flex flex-col gap-6">
+          <ResumeList
+            title="Approved Resumes"
+            items={uploads.approved}
+            selected={selections.resume}
+            onSelect={(item) => setSelections((prev) => ({ ...prev, resume: item }))}
+            actionButton={
+              <>
+                <input
+                  type="file"
+                  accept=".docx"
+                  ref={fileInputRef}
+                  style={{ display: 'none' }}
+                  onChange={handleResumeFileChange}
+                />
+                <button
+                  className="ml-auto mb-2 flex h-8 w-8 items-center justify-center rounded bg-emerald-600 text-white text-xl font-bold hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                  title="Upload Resume"
+                  onClick={() => fileInputRef.current && fileInputRef.current.click()}
+                >
+                  +
+                </button>
+              </>
+            }
           />
-          <p className="mt-2 text-xs text-slate-500">
-            You can also upload job descriptions as files and select them below.
-          </p>
+          <ResumeList
+            title="Templates"
+            items={uploads.template}
+            selected={selections.template}
+            onSelect={(item) => setSelections((prev) => ({ ...prev, template: item }))}
+            actionButton={
+              <>
+                <input
+                  type="file"
+                  accept=".docx"
+                  ref={templateFileInputRef}
+                  style={{ display: 'none' }}
+                  onChange={handleTemplateFileChange}
+                />
+                <button
+                  className="ml-auto mb-2 flex h-8 w-8 items-center justify-center rounded bg-emerald-600 text-white text-xl font-bold hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                  title="Upload Template"
+                  onClick={() => templateFileInputRef.current && templateFileInputRef.current.click()}
+                >
+                  +
+                </button>
+              </>
+            }
+          />
+          <ResumeList
+            title="Job Descriptions"
+            items={uploads.jobs}
+            selected={selections.job}
+            onSelect={(item) => setSelections((prev) => ({ ...prev, job: item }))}
+          />
+          <GenerateButton
+            apiUrl={apiUrl}
+            tenantId={tenantId}
+            selections={preparedSelections}
+            onGenerated={handleGenerated}
+          />
+        </div>
+        <div className="rounded-lg bg-slate-900 p-6 shadow">
+          <div className="flex flex-col h-full">
+            <label htmlFor="job-description" className="block text-sm font-medium text-slate-300">
+              Job Description
+            </label>
+            <textarea
+              id="job-description"
+              value={jobDescription}
+              onChange={(event) => setJobDescription(event.target.value)}
+              className="mt-2 w-full flex-1 rounded border border-slate-700 bg-slate-800 p-3 text-sm text-slate-100 resize-none"
+              placeholder="Paste the job description here"
+              style={{ minHeight: '150px' }}
+            />
+            <p className="mt-2 text-xs text-slate-500">
+              You can also upload job descriptions as files and select them below.
+            </p>
+          </div>
         </div>
       </section>
 
-      <section className="grid gap-6 md:grid-cols-3">
-        <ResumeList
-          title="Approved Resumes"
-          items={uploads.approved}
-          selected={selections.resume}
-          onSelect={(item) => setSelections((prev) => ({ ...prev, resume: item }))}
-          actionButton={
-            <>
-              <input
-                type="file"
-                accept=".docx"
-                ref={fileInputRef}
-                style={{ display: 'none' }}
-                onChange={handleResumeFileChange}
-              />
-              <button
-                className="ml-auto mb-2 flex h-8 w-8 items-center justify-center rounded bg-emerald-600 text-white text-xl font-bold hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-400"
-                title="Upload Resume"
-                onClick={() => fileInputRef.current && fileInputRef.current.click()}
-              >
-                +
-              </button>
-            </>
-          }
-        />
-        <ResumeList
-          title="Templates"
-          items={uploads.template}
-          selected={selections.template}
-          onSelect={(item) => setSelections((prev) => ({ ...prev, template: item }))}
-        />
-        <ResumeList
-          title="Job Descriptions"
-          items={uploads.jobs}
-          selected={selections.job}
-          onSelect={(item) => setSelections((prev) => ({ ...prev, job: item }))}
-        />
-      </section>
+      {/* Removed duplicate ResumeList sections. Only the new stacked left column remains. */}
 
       {/* Upload modal removed; upload is now direct via file dialog */}
 
-      <GenerateButton
-        apiUrl={apiUrl}
-        tenantId={tenantId}
-        selections={preparedSelections}
-        onGenerated={handleGenerated}
-      />
 
       <section className="space-y-4">
         <h2 className="text-2xl font-semibold text-white">Generated Outputs</h2>

@@ -1,0 +1,8 @@
+{
+  "apiUrl": "https://gcg7nyhg3f.execute-api.us-east-1.amazonaws.com/prod/",
+  "userPoolId": "us-east-1_5hDDr3zbS",
+  "userPoolClientId": "6pvr2q4nmim0jddbggth2iqkql",
+  "identityPoolId": "us-east-1:851c0ee2-2ad2-4715-ae46-98f42a1fea67",
+  "region": "us-east-1",
+  "bucketName": "resumefrontendstack-resumefrontendbucket1768d772-fsgbqm7uffdc"
+}
