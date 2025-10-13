@@ -10,6 +10,7 @@ const Dashboard = ({ apiUrl }) => {
   const [selections, setSelections] = useState({ resume: null, template: null, job: null });
   const [jobDescription, setJobDescription] = useState('');
   const [generatedOutputs, setGeneratedOutputs] = useState([]);
+  const fileInputRef = React.useRef();
   // No background download needed; use presigned URL directly
 
   const handleUploadComplete = (item) => {
@@ -80,6 +81,40 @@ const Dashboard = ({ apiUrl }) => {
     [selections, jobDescription]
   );
 
+  // Handle file selection and upload for Approved Resume
+  const handleResumeFileChange = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    // Convert file to base64
+    const toBase64 = (inputFile) => new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(inputFile);
+      reader.onload = () => {
+        const result = reader.result;
+        resolve(result.split(',')[1]);
+      };
+      reader.onerror = (error) => reject(error);
+    });
+    try {
+      const content = await toBase64(file);
+      const response = await axios.post(`${apiUrl}upload`, {
+        tenantId,
+        category: 'approved',
+        fileName: file.name,
+        content,
+      });
+      handleUploadComplete({
+        ...response.data,
+        fileName: file.name,
+        category: 'approved',
+      });
+    } catch (err) {
+      alert('Failed to upload resume.');
+    }
+    // Reset file input value so same file can be selected again
+    event.target.value = '';
+  };
+
   return (
     <main className="mx-auto max-w-6xl space-y-10 p-6">
       <header className="space-y-3">
@@ -115,6 +150,24 @@ const Dashboard = ({ apiUrl }) => {
           items={uploads.approved}
           selected={selections.resume}
           onSelect={(item) => setSelections((prev) => ({ ...prev, resume: item }))}
+          actionButton={
+            <>
+              <input
+                type="file"
+                accept=".docx"
+                ref={fileInputRef}
+                style={{ display: 'none' }}
+                onChange={handleResumeFileChange}
+              />
+              <button
+                className="ml-auto mb-2 flex h-8 w-8 items-center justify-center rounded bg-emerald-600 text-white text-xl font-bold hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                title="Upload Resume"
+                onClick={() => fileInputRef.current && fileInputRef.current.click()}
+              >
+                +
+              </button>
+            </>
+          }
         />
         <ResumeList
           title="Templates"
@@ -129,6 +182,8 @@ const Dashboard = ({ apiUrl }) => {
           onSelect={(item) => setSelections((prev) => ({ ...prev, job: item }))}
         />
       </section>
+
+      {/* Upload modal removed; upload is now direct via file dialog */}
 
       <GenerateButton
         apiUrl={apiUrl}

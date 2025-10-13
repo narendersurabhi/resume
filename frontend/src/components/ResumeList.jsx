@@ -1,9 +1,14 @@
 import React from 'react';
 
-const ResumeList = ({ items = [], title, onSelect, selected }) => (
-  <div className="rounded-lg bg-slate-900 p-4 shadow">
+const ResumeList = ({ items = [], title, onSelect, selected, actionButton }) => (
+  <div className="relative rounded-lg bg-slate-900 p-4 shadow">
     <h3 className="text-lg font-semibold text-slate-200">{title}</h3>
-    {items.length === 0 ? (
+    {actionButton && (
+      <div className="absolute top-2 right-2">
+        {actionButton}
+      </div>
+    )}
+  {items.length === 0 ? (
       <p className="mt-2 text-sm text-slate-400">No items uploaded yet.</p>
     ) : (
       <ul className="mt-3 space-y-2">
