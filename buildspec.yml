@@ -37,14 +37,14 @@ phases:
     commands:
       - echo "Re-authenticating to ECR to ensure push succeeds"
       - aws ecr get-login-password --region "${AWS_REGION}" | docker login --username AWS --password-stdin "${ECR_URI_BASE}"
-      - echo "Local images before push:" && docker images | awk '{print $1, $2}' | sed -n '1,20p'
-      - echo "Pushing images to ECR: ${ECR_URI_BASE} with tag ${SHORT_SHA}"
+      - echo "Local images before push" && docker images | awk '{print $1, $2}' | sed -n '1,20p'
+      - echo "Pushing images to ECR ${ECR_URI_BASE} with tag ${SHORT_SHA}"
       - docker push "${ECR_URI_BASE}/${DOWNLOAD_REPO}:${SHORT_SHA}"
       - docker push "${ECR_URI_BASE}/${GENERATE_REPO}:${SHORT_SHA}"
       - docker push "${ECR_URI_BASE}/${UPLOAD_REPO}:${SHORT_SHA}"
       - export CDK_DEFAULT_ACCOUNT="${ACCOUNT_ID}"
       - export CDK_DEFAULT_REGION="${AWS_REGION}"
-      - if [ "${DEPLOY_APP}" = "true" ]; then cdk deploy --app "python3.11 -m cdk.app" ResumeAuthStack ResumeBackendStack ResumeFrontendStack --require-approval never --parameters ResumeBackendStack:DownloadImageTag="${SHORT_SHA}" --parameters ResumeBackendStack:GenerateImageTag="${SHORT_SHA}" --parameters ResumeBackendStack:UploadImageTag="${SHORT_SHA}"; else echo "Skipping CDK app deployment (DEPLOY_APP=${DEPLOY_APP})."; fi
+      - "if [ \"${DEPLOY_APP}\" = \"true\" ]; then cdk deploy --app \"python3.11 -m cdk.app\" ResumeAuthStack ResumeBackendStack ResumeFrontendStack --require-approval never --parameters ResumeBackendStack:DownloadImageTag=\"${SHORT_SHA}\" --parameters ResumeBackendStack:GenerateImageTag=\"${SHORT_SHA}\" --parameters ResumeBackendStack:UploadImageTag=\"${SHORT_SHA}\"; else echo \"Skipping CDK app deployment (DEPLOY_APP=${DEPLOY_APP}).\"; fi"
 artifacts:
   files:
     - '**/*'
