@@ -227,6 +227,7 @@ class PipelineStack(Stack):
                 "DOWNLOAD_REPO": codebuild.BuildEnvironmentVariable(value=download_repo.repository_name),
                 "GENERATE_REPO": codebuild.BuildEnvironmentVariable(value=generate_repo.repository_name),
                 "UPLOAD_REPO": codebuild.BuildEnvironmentVariable(value=upload_repo.repository_name),
+                "DEPLOY_APP": codebuild.BuildEnvironmentVariable(value="false"),
             },
         )
 

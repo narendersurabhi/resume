@@ -1,4 +1,4 @@
-version: 0.2
+﻿version: 0.2
 env:
   shell: bash
   variables:
@@ -44,18 +44,7 @@ phases:
       - docker push "${ECR_URI_BASE}/${UPLOAD_REPO}:${SHORT_SHA}"
       - export CDK_DEFAULT_ACCOUNT="${ACCOUNT_ID}"
       - export CDK_DEFAULT_REGION="${AWS_REGION}"
-      - |
-        if [ "${DEPLOY_APP}" = "true" ]; then
-          echo "Deploying app stacks via CDK..."
-          cdk deploy --app "python3.11 -m cdk.app" \
-            ResumeAuthStack ResumeBackendStack ResumeFrontendStack \
-            --require-approval never \
-            --parameters ResumeBackendStack:DownloadImageTag="${SHORT_SHA}" \
-            --parameters ResumeBackendStack:GenerateImageTag="${SHORT_SHA}" \
-            --parameters ResumeBackendStack:UploadImageTag="${SHORT_SHA}"
-        else
-          echo "Skipping CDK app deployment (DEPLOY_APP=${DEPLOY_APP})."
-        fi
+      - if [ "${DEPLOY_APP}" = "true" ]; then cdk deploy --app "python3.11 -m cdk.app" ResumeAuthStack ResumeBackendStack ResumeFrontendStack --require-approval never --parameters ResumeBackendStack:DownloadImageTag="${SHORT_SHA}" --parameters ResumeBackendStack:GenerateImageTag="${SHORT_SHA}" --parameters ResumeBackendStack:UploadImageTag="${SHORT_SHA}"; else echo "Skipping CDK app deployment (DEPLOY_APP=${DEPLOY_APP})."; fi
 artifacts:
   files:
     - '**/*'
