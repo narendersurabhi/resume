@@ -25,6 +25,7 @@ class BackendStack(Stack):
 
         cf_dist_id = os.getenv("CF_DIST_ID", "")
         CDK_DEFAULT_REGION = os.getenv("CDK_DEFAULT_REGION")
+        frontend_origin_env = os.getenv("FRONTEND_ORIGIN", "").strip()
 
         # Parameters controlling container image tags supplied by the pipeline
         download_image_tag = CfnParameter(
@@ -70,12 +71,12 @@ class BackendStack(Stack):
         )
 
         # Determine the frontend origin for CORS
-        # Priority: explicit context value -> CloudFront distribution id -> fallback '*'
+        # Priority: FRONTEND_ORIGIN env var -> explicit context value -> fallback '*'
         allowed_origin_ctx = self.node.try_get_context("frontendOrigin")
-        if allowed_origin_ctx and str(allowed_origin_ctx).strip():
+        if frontend_origin_env:
+            frontend_domain = frontend_origin_env
+        elif allowed_origin_ctx and str(allowed_origin_ctx).strip():
             frontend_domain = str(allowed_origin_ctx).strip()
-        elif cf_dist_id:
-            frontend_domain = f"https://{cf_dist_id}.cloudfront.net"
         else:
             frontend_domain = "*"
 
