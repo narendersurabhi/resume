@@ -1,11 +1,13 @@
 """Backend infrastructure stack for the resume tailoring platform."""
 from aws_cdk import (
+    CfnParameter,
     Duration,
     RemovalPolicy,
     Stack,
     CfnOutput,
     aws_apigateway as apigateway,
     aws_dynamodb as dynamodb,
+    aws_ecr as ecr,
     aws_iam as iam,
     aws_lambda as lambda_,
     aws_logs as logs,
@@ -23,6 +25,29 @@ class BackendStack(Stack):
 
         cf_dist_id = os.getenv("CF_DIST_ID", "")
         CDK_DEFAULT_REGION = os.getenv("CDK_DEFAULT_REGION")
+
+        # Parameters controlling container image tags supplied by the pipeline
+        download_image_tag = CfnParameter(
+            self,
+            "DownloadImageTag",
+            type="String",
+            default="latest",
+            description="Tag for the download Lambda container image.",
+        )
+        generate_image_tag = CfnParameter(
+            self,
+            "GenerateImageTag",
+            type="String",
+            default="latest",
+            description="Tag for the generate Lambda container image.",
+        )
+        upload_image_tag = CfnParameter(
+            self,
+            "UploadImageTag",
+            type="String",
+            default="latest",
+            description="Tag for the upload Lambda container image.",
+        )
 
         # Storage
         bucket = s3.Bucket(
@@ -56,51 +81,57 @@ class BackendStack(Stack):
             "CDK_DEFAULT_REGION": CDK_DEFAULT_REGION,
         }
 
-        # layer
-        docx_layer = lambda_.LayerVersion(
-            self, "DocxLayer",
-            code=lambda_.Code.from_asset("layers/docx_layer/layer.zip"),
-            compatible_runtimes=[lambda_.Runtime.PYTHON_3_12],
-            description="python-docx + lxml"
+        # ECR repositories hosting the Lambda container images
+        download_repo = ecr.Repository.from_repository_name(
+            self, "DownloadRepository", "resume-download"
+        )
+        generate_repo = ecr.Repository.from_repository_name(
+            self, "GenerateRepository", "resume-generate"
+        )
+        upload_repo = ecr.Repository.from_repository_name(
+            self, "UploadRepository", "resume-upload"
         )
 
-        # Lambdas
-
-        upload_function = lambda_.Function(
-            self,
-            "ResumeUploadFunction",
-            runtime=lambda_.Runtime.PYTHON_3_12,
-            handler="app.handler",
-            code=lambda_.Code.from_asset("lambdas/upload_handler"),
+        common_image_props = dict(
+            architecture=lambda_.Architecture.X86_64,
+            environment=lambda_env,
             memory_size=1024,
             timeout=Duration.minutes(5),
             log_retention=logs.RetentionDays.ONE_MONTH,
-            environment=lambda_env,
         )
 
-        generate_function = lambda_.Function(
+        upload_function = lambda_.DockerImageFunction(
+            self,
+            "ResumeUploadFunction",
+            code=lambda_.DockerImageCode.from_ecr(
+                repository=upload_repo,
+                tag_or_digest=upload_image_tag.value_as_string,
+            ),
+            **common_image_props,
+        )
+
+        generate_function = lambda_.DockerImageFunction(
             self,
             "ResumeGenerateFunction",
-            runtime=lambda_.Runtime.PYTHON_3_12,
-            handler="app.handler",
-            code=lambda_.Code.from_asset("lambdas/generate_handler"),
+            code=lambda_.DockerImageCode.from_ecr(
+                repository=generate_repo,
+                tag_or_digest=generate_image_tag.value_as_string,
+            ),
+            architecture=lambda_.Architecture.X86_64,
+            environment=lambda_env,
             memory_size=2048,
             timeout=Duration.minutes(15),
             log_retention=logs.RetentionDays.ONE_MONTH,
-            environment=lambda_env,
-            layers=[docx_layer], 
         )
 
-        download_function = lambda_.Function(
+        download_function = lambda_.DockerImageFunction(
             self,
             "ResumeDownloadFunction",
-            runtime=lambda_.Runtime.PYTHON_3_12,
-            handler="app.handler",
-            code=lambda_.Code.from_asset("lambdas/download_handler"),
-            memory_size=1024,
-            timeout=Duration.minutes(5),
-            log_retention=logs.RetentionDays.ONE_MONTH,
-            environment=lambda_env,
+            code=lambda_.DockerImageCode.from_ecr(
+                repository=download_repo,
+                tag_or_digest=download_image_tag.value_as_string,
+            ),
+            **common_image_props,
         )
 
         # Grants
