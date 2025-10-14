@@ -13,3 +13,10 @@ layers/docx_layer/python/
 .idea/
 .vscode/
 coverage/
+__docx_tmp__
+__docx_tmp2__
+__edit_style__
+__fix_blocks__
+__fix_docx__
+__inspect_out__
+__inspect_tpl__
