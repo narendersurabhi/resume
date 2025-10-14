@@ -1,0 +1,145 @@
+{
+  "name": "NARENDER SURABHI",
+  "title": "AI Solutions Architect",
+  "summary": "Innovative AI/ML Engineer with 15+ years in healthcare IT and 9+ years designing, scaling, and operationalizing AI-powered solutions. Proven ability to lead product-oriented AI initiatives, architect end-to-end pipelines, and build agentic AI systems that improve decision-making and reduce costs. Strong track record collaborating across product, engineering, and business teams to deliver high-visibility features and mentor engineering talent.",
+  "city": "Okemos",
+  "state": "MI", 
+  "zip": "48864", 
+  "phone": "+1(213)-254-8205", 
+  "email":"surabhinarenderrao@gmail.com",
+  "links":["https://linkedin.com/in/narendersurabhi", "https://github.com/narendersurabhi"],
+
+  "skills": [
+    {
+      "group": "Machine Learning & AI",
+      "items": [
+        "Supervised & Unsupervised Modeling",
+        "Anomaly Detection",
+        "LLM Integration"
+      ]
+    },
+    {
+      "group": "Cloud & Data Engineering",
+      "items": [
+        "AWS SageMaker",
+        "AWS Bedrock",
+        "AWS Glue"
+      ]
+    },
+    {
+      "group": "Programming & Tools",
+      "items": [
+        "Python",
+        "PyTorch",
+        "Scikit‑learn"
+      ]
+    },
+    {
+      "group": "MLOps & Deployment",
+      "items": [
+        "Model Productionization",
+        "Pipeline Automation",
+        "SageMaker Clarify"
+      ]
+    }
+  ],
+  "experience": [
+    {
+      "role": "Software Engineer (AI Solutions Architect)",
+      "company": "Acentra Health",
+      "location": "Okemos, Michigan",
+      "period": "12/2016-Present",
+      "bullets": [
+        "Designed and deployed end‑to‑end AI/ML pipelines for fraud, waste, and abuse detection, boosting detection coverage by 20% and cutting improper claim payments by $15M+ annually",
+        "Engineered real‑time pre‑payment claim review system that increased review efficiency by 30% and enabled proactive fraud intervention",
+        "Built and productionized unsupervised anomaly detection and supervised classification models using SageMaker, PyTorch, and Scikit‑learn, automating eligibility and billing pattern checks"
+      ],
+      "initiatives": [
+        "Program Intelligence – Engineered supervised/unsupervised models for predictive FWA analytics, improving detection accuracy by 15%",
+        "AuditStudio (North Dakota SURS) – Built post‑payment audit scoring pipelines using PCA/KMeans, scaling statewide fraud auditing",
+        "ClaimsSure Product – Deployed predictive and rules‑based ML models for pre‑pay claim validation, reducing false positives and increasing trust"
+      ]
+    },
+    {
+      "role": "Senior Associate Consultant",
+      "company": "Infosys Limited",
+      "location": "Los Angeles, CA",
+      "period": "01/2013-01/2016",
+      "bullets": [
+        "Enhanced healthcare IT platforms to meet CMS and state compliance, raising data throughput by 15%",
+        "Designed and implemented PL/SQL procedures, triggers, and views that streamlined data processing and reduced manual effort",
+        "Coordinated cross‑functional requirement gathering, QA/UAT, and production deployments, ensuring timely delivery of compliant solutions"
+      ],
+      "initiatives": []
+    },
+    {
+      "role": "Programmer Analyst",
+      "company": "Syntel Limited",
+      "location": "Pune, India",
+      "period": "01/2010-01/2013",
+      "bullets": [
+        "Developed and extended core TriZetto healthcare enterprise application, improving system reliability",
+        "Automated FedEx eDD integration, cutting manual effort by 40%",
+        "Collaborated with QA and operations teams to resolve production issues and enhance performance"
+      ],
+      "initiatives": []
+    },
+    {
+      "role": "Programmer",
+      "company": "Cognizant",
+      "location": "Hyderabad, India",
+      "period": "09/2007-01/2010",
+      "bullets": [
+        "Supported HealthPAS system integration, ensuring seamless credentialing workflow automation",
+        "Implemented scripts to automate credentialing processes, reducing processing time",
+        "Provided maintenance and troubleshooting, maintaining system uptime"
+      ],
+      "initiatives": []
+    }
+  ],
+  "projects": [
+    {
+      "name":"Program Intelligence",
+      "period": "2022-2023",
+      "bullets": [
+        "Deployed supervised and unsupervised ML models for real‑time fraud detection, improving detection accuracy by 15%."
+      ]
+    },
+    {
+      "name":"AuditStudio (ND)",
+      "period": "2021-2022",
+      "bullets": [
+        "Engineered Spark + SageMaker pipelines for post‑payment audit scoring, reducing manual processing effort by 20%."
+      ]
+    },
+    {
+      "name":"ClaimsSure (Realtime)",
+      "period": "2020-2021",
+      "bullets": [
+        "Designed pre‑pay anomaly detection pipelines integrating ML and rules‑based logic, boosting coverage by 10%."        
+      ]
+    }
+  ],
+  "education": [
+    {
+      "degree": "B.Sc. Mathematics, Physics, Electronics",
+      "school": "Nizam College",
+      "location": "Hyderabad, India",
+      "period": "",
+      "bullets": []
+    }
+  ],
+  "certifications": [
+    {
+      "name": "AWS AI Practitioner",
+      "by": "AWS",
+      "year": "2025"
+    },
+    {
+      "name": "ML Certification",
+      "by": "MIT",
+      "year": "2022"
+    }
+  ],
+  "awards": ["Sport Award 2023"]
+}
