@@ -1,0 +1,48 @@
+version: 0.2
+env:
+  shell: bash
+  variables:
+    DOWNLOAD_REPO: resume-download
+    GENERATE_REPO: resume-generate
+    UPLOAD_REPO: resume-upload
+phases:
+  install:
+    runtime-versions:
+      python: 3.11
+      nodejs: 20
+    commands:
+      - npm install -g aws-cdk@2
+      - pip install -r cdk/requirements.txt
+      - npm ci --prefix frontend
+  pre_build:
+    commands:
+      - set -euo pipefail
+      - export AWS_REGION="${AWS_REGION:-us-east-1}"
+      - ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
+      - export ACCOUNT_ID
+      - export ECR_URI_BASE="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+      - export SHORT_SHA="$(echo "${CODEBUILD_RESOLVED_SOURCE_VERSION:-latest}" | cut -c1-7)"
+      - aws ecr get-login-password --region "${AWS_REGION}" | docker login --username AWS --password-stdin "${ECR_URI_BASE}"
+  build:
+    commands:
+      - npm run build --prefix frontend
+      - docker build -t "${ECR_URI_BASE}/${DOWNLOAD_REPO}:${SHORT_SHA}" -f lambdas/download_handler/Dockerfile lambdas/download_handler
+      - docker build -t "${ECR_URI_BASE}/${GENERATE_REPO}:${SHORT_SHA}" -f lambdas/generate_handler/Dockerfile lambdas/generate_handler
+      - docker build -t "${ECR_URI_BASE}/${UPLOAD_REPO}:${SHORT_SHA}" -f lambdas/upload_handler/Dockerfile lambdas/upload_handler
+  post_build:
+    commands:
+      - docker push "${ECR_URI_BASE}/${DOWNLOAD_REPO}:${SHORT_SHA}"
+      - docker push "${ECR_URI_BASE}/${GENERATE_REPO}:${SHORT_SHA}"
+      - docker push "${ECR_URI_BASE}/${UPLOAD_REPO}:${SHORT_SHA}"
+      - export CDK_DEFAULT_ACCOUNT="${ACCOUNT_ID}"
+      - export CDK_DEFAULT_REGION="${AWS_REGION}"
+      - cdk deploy --app "python3.11 -m cdk.app" \
+          ResumeAuthStack ResumeBackendStack ResumeFrontendStack \
+          --require-approval never \
+          --parameters ResumeBackendStack:DownloadImageTag="${SHORT_SHA}" \
+          --parameters ResumeBackendStack:GenerateImageTag="${SHORT_SHA}" \
+          --parameters ResumeBackendStack:UploadImageTag="${SHORT_SHA}"
+artifacts:
+  files:
+    - '**/*'
+  base-directory: frontend/dist
