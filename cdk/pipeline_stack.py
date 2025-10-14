@@ -8,7 +8,7 @@ from aws_cdk import (
     aws_codebuild as codebuild,
     aws_codepipeline as codepipeline,
     aws_codepipeline_actions as cpactions,
-    aws_codeconnections as codeconnections,
+    aws_codestarconnections as codestarconnections,
     aws_ecr as ecr,
     aws_iam as iam,
     aws_s3 as s3,
@@ -72,7 +72,7 @@ class PipelineStack(Stack):
             self, "PipelineUploadRepo", "resume-upload"
         )
 
-        connection = codeconnections.CfnConnection(
+        connection = codestarconnections.CfnConnection(
             self,
             "GitHubConnection",
             connection_name=connection_name.value_as_string,
@@ -109,6 +109,15 @@ class PipelineStack(Stack):
                         "logs:PutLogEvents",
                     ],
                     resources=[log_group_arn, f"{log_group_arn}:*"]
+                ),
+                iam.PolicyStatement(
+                    actions=["sts:AssumeRole"],
+                    resources=[
+                        f"arn:aws:iam::{self.account}:role/cdk-hnb659fds-deploy-role-{self.account}-{self.region}",
+                        f"arn:aws:iam::{self.account}:role/cdk-hnb659fds-file-publishing-role-{self.account}-{self.region}",
+                        f"arn:aws:iam::{self.account}:role/cdk-hnb659fds-image-publishing-role-{self.account}-{self.region}",
+                        f"arn:aws:iam::{self.account}:role/cdk-hnb659fds-lookup-role-{self.account}-{self.region}",
+                    ],
                 ),
                 iam.PolicyStatement(
                     actions=[
@@ -203,11 +212,10 @@ class PipelineStack(Stack):
 
         codebuild_policy.attach_to_role(codebuild_role)
 
-        project = codebuild.Project(
+        project = codebuild.PipelineProject(
             self,
             "ResumeCodeBuildProject",
             role=codebuild_role,
-            source=codebuild.Source.code_pipeline(),
             environment=codebuild.BuildEnvironment(
                 build_image=codebuild.LinuxBuildImage.STANDARD_7_0,
                 privileged=True,
