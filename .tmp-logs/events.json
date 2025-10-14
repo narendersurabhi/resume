@@ -1,0 +1,990 @@
+{
+    "events": [
+        {
+            "timestamp": 1760475390013,
+            "message": "[Container] 2025/10/14 20:56:24.126111 Running on CodeBuild On-demand\n",
+            "ingestionTime": 1760475390035
+        },
+        {
+            "timestamp": 1760475390013,
+            "message": "[Container] 2025/10/14 20:56:24.126260 Waiting for agent ping\n",
+            "ingestionTime": 1760475390035
+        },
+        {
+            "timestamp": 1760475390013,
+            "message": "[Container] 2025/10/14 20:56:24.328114 Waiting for DOWNLOAD_SOURCE\n",
+            "ingestionTime": 1760475390035
+        },
+        {
+            "timestamp": 1760475390013,
+            "message": "[Container] 2025/10/14 20:56:25.917418 Phase is DOWNLOAD_SOURCE\n",
+            "ingestionTime": 1760475390035
+        },
+        {
+            "timestamp": 1760475390013,
+            "message": "[Container] 2025/10/14 20:56:25.919291 CODEBUILD_SRC_DIR=/codebuild/output/src1204280764/src\n",
+            "ingestionTime": 1760475390035
+        },
+        {
+            "timestamp": 1760475390013,
+            "message": "[Container] 2025/10/14 20:56:25.920118 YAML location is /codebuild/output/src1204280764/src/buildspec.yml\n",
+            "ingestionTime": 1760475390035
+        },
+        {
+            "timestamp": 1760475390013,
+            "message": "[Container] 2025/10/14 20:56:25.923431 Selecting shell bash as specified in buildspec.\n",
+            "ingestionTime": 1760475390035
+        },
+        {
+            "timestamp": 1760475390013,
+            "message": "[Container] 2025/10/14 20:56:25.926987 Setting HTTP client timeout to higher timeout for S3 source\n",
+            "ingestionTime": 1760475390035
+        },
+        {
+            "timestamp": 1760475390013,
+            "message": "[Container] 2025/10/14 20:56:25.927196 Processing environment variables\n",
+            "ingestionTime": 1760475390035
+        },
+        {
+            "timestamp": 1760475390013,
+            "message": "[Container] 2025/10/14 20:56:26.133611 Selecting 'python' runtime version '3.11' based on manual selections...\n",
+            "ingestionTime": 1760475390035
+        },
+        {
+            "timestamp": 1760475390013,
+            "message": "[Container] 2025/10/14 20:56:26.133635 Selecting 'nodejs' runtime version '20' based on manual selections...\n",
+            "ingestionTime": 1760475390035
+        },
+        {
+            "timestamp": 1760475390013,
+            "message": "[Container] 2025/10/14 20:56:28.455024 Running command echo \"Installing Node.js version 20 ...\"\n",
+            "ingestionTime": 1760475390035
+        },
+        {
+            "timestamp": 1760475390013,
+            "message": "Installing Node.js version 20 ...\n",
+            "ingestionTime": 1760475390035
+        },
+        {
+            "timestamp": 1760475390013,
+            "message": "\n",
+            "ingestionTime": 1760475390035
+        },
+        {
+            "timestamp": 1760475390013,
+            "message": "[Container] 2025/10/14 20:56:28.465206 Running command n $NODE_20_VERSION\n",
+            "ingestionTime": 1760475390035
+        },
+        {
+            "timestamp": 1760475390013,
+            "message": "     copying : node/20.19.2\n",
+            "ingestionTime": 1760475390035
+        },
+        {
+            "timestamp": 1760475420071,
+            "message": "   installed : v20.19.2\n",
+            "ingestionTime": 1760475420090
+        },
+        {
+            "timestamp": 1760475420071,
+            "message": "\n",
+            "ingestionTime": 1760475420090
+        },
+        {
+            "timestamp": 1760475420071,
+            "message": "[Container] 2025/10/14 20:56:59.854691 Running command echo \"Installing Python version 3.11 ...\"\n",
+            "ingestionTime": 1760475420090
+        },
+        {
+            "timestamp": 1760475420071,
+            "message": "Installing Python version 3.11 ...\n",
+            "ingestionTime": 1760475420090
+        },
+        {
+            "timestamp": 1760475420071,
+            "message": "\n",
+            "ingestionTime": 1760475420090
+        },
+        {
+            "timestamp": 1760475420071,
+            "message": "[Container] 2025/10/14 20:56:59.861355 Running command pyenv global $PYTHON_311_VERSION\n",
+            "ingestionTime": 1760475420090
+        },
+        {
+            "timestamp": 1760475422103,
+            "message": "\n",
+            "ingestionTime": 1760475422106
+        },
+        {
+            "timestamp": 1760475422103,
+            "message": "[Container] 2025/10/14 20:57:00.451368 Moving to directory /codebuild/output/src1204280764/src\n",
+            "ingestionTime": 1760475422106
+        },
+        {
+            "timestamp": 1760475422103,
+            "message": "[Container] 2025/10/14 20:57:00.451393 Cache is not defined in the buildspec\n",
+            "ingestionTime": 1760475422106
+        },
+        {
+            "timestamp": 1760475422103,
+            "message": "[Container] 2025/10/14 20:57:00.493476 Skip cache due to: no paths specified to be cached\n",
+            "ingestionTime": 1760475422106
+        },
+        {
+            "timestamp": 1760475422103,
+            "message": "[Container] 2025/10/14 20:57:00.493927 Registering with agent\n",
+            "ingestionTime": 1760475422106
+        },
+        {
+            "timestamp": 1760475422103,
+            "message": "[Container] 2025/10/14 20:57:00.530424 Phases found in YAML: 4\n",
+            "ingestionTime": 1760475422106
+        },
+        {
+            "timestamp": 1760475422103,
+            "message": "[Container] 2025/10/14 20:57:00.530444  INSTALL: 3 commands\n",
+            "ingestionTime": 1760475422106
+        },
+        {
+            "timestamp": 1760475422103,
+            "message": "[Container] 2025/10/14 20:57:00.530449  PRE_BUILD: 7 commands\n",
+            "ingestionTime": 1760475422106
+        },
+        {
+            "timestamp": 1760475422103,
+            "message": "[Container] 2025/10/14 20:57:00.530453  BUILD: 4 commands\n",
+            "ingestionTime": 1760475422106
+        },
+        {
+            "timestamp": 1760475422103,
+            "message": "[Container] 2025/10/14 20:57:00.530457  POST_BUILD: 6 commands\n",
+            "ingestionTime": 1760475422106
+        },
+        {
+            "timestamp": 1760475422103,
+            "message": "[Container] 2025/10/14 20:57:00.530949 Phase complete: DOWNLOAD_SOURCE State: SUCCEEDED\n",
+            "ingestionTime": 1760475422106
+        },
+        {
+            "timestamp": 1760475422103,
+            "message": "[Container] 2025/10/14 20:57:00.530964 Phase context status code:  Message: \n",
+            "ingestionTime": 1760475422106
+        },
+        {
+            "timestamp": 1760475422103,
+            "message": "[Container] 2025/10/14 20:57:00.650047 Entering phase INSTALL\n",
+            "ingestionTime": 1760475422106
+        },
+        {
+            "timestamp": 1760475422103,
+            "message": "[Container] 2025/10/14 20:57:00.689763 Running command npm install -g aws-cdk@2\n",
+            "ingestionTime": 1760475422106
+        },
+        {
+            "timestamp": 1760475430120,
+            "message": "\n",
+            "ingestionTime": 1760475430138
+        },
+        {
+            "timestamp": 1760475430120,
+            "message": "added 2 packages in 7s\n",
+            "ingestionTime": 1760475430138
+        },
+        {
+            "timestamp": 1760475430120,
+            "message": "\n",
+            "ingestionTime": 1760475430138
+        },
+        {
+            "timestamp": 1760475430120,
+            "message": "[Container] 2025/10/14 20:57:08.889924 Running command pip install -r cdk/requirements.txt\n",
+            "ingestionTime": 1760475430138
+        },
+        {
+            "timestamp": 1760475444165,
+            "message": "Collecting aws-cdk-lib==2.133.0 (from -r cdk/requirements.txt (line 1))\n",
+            "ingestionTime": 1760475444186
+        },
+        {
+            "timestamp": 1760475444165,
+            "message": "  Downloading aws_cdk_lib-2.133.0-py3-none-any.whl.metadata (59 kB)\n",
+            "ingestionTime": 1760475444186
+        },
+        {
+            "timestamp": 1760475444165,
+            "message": "Collecting constructs<11.0.0,>=10.0.0 (from -r cdk/requirements.txt (line 2))\n",
+            "ingestionTime": 1760475444186
+        },
+        {
+            "timestamp": 1760475444165,
+            "message": "  Downloading constructs-10.4.2-py3-none-any.whl.metadata (2.9 kB)\n",
+            "ingestionTime": 1760475444186
+        },
+        {
+            "timestamp": 1760475444165,
+            "message": "Collecting aws-cdk.aws-cognito-identitypool-alpha==2.133.0a0 (from -r cdk/requirements.txt (line 3))\n",
+            "ingestionTime": 1760475444186
+        },
+        {
+            "timestamp": 1760475444165,
+            "message": "  Downloading aws_cdk.aws_cognito_identitypool_alpha-2.133.0a0-py3-none-any.whl.metadata (18 kB)\n",
+            "ingestionTime": 1760475444186
+        },
+        {
+            "timestamp": 1760475444165,
+            "message": "Collecting aws-cdk.aws-lambda-python-alpha (from -r cdk/requirements.txt (line 4))\n",
+            "ingestionTime": 1760475444186
+        },
+        {
+            "timestamp": 1760475444165,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.220.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475444186
+        },
+        {
+            "timestamp": 1760475444165,
+            "message": "Collecting aws-cdk.asset-awscli-v1<3.0.0,>=2.2.202 (from aws-cdk-lib==2.133.0->-r cdk/requirements.txt (line 1))\n",
+            "ingestionTime": 1760475444186
+        },
+        {
+            "timestamp": 1760475444165,
+            "message": "  Downloading aws_cdk_asset_awscli_v1-2.2.256-py3-none-any.whl.metadata (1.1 kB)\n",
+            "ingestionTime": 1760475444186
+        },
+        {
+            "timestamp": 1760475444165,
+            "message": "Collecting aws-cdk.asset-kubectl-v20<3.0.0,>=2.1.2 (from aws-cdk-lib==2.133.0->-r cdk/requirements.txt (line 1))\n",
+            "ingestionTime": 1760475444186
+        },
+        {
+            "timestamp": 1760475444165,
+            "message": "  Downloading aws_cdk.asset_kubectl_v20-2.1.4-py3-none-any.whl.metadata (1.1 kB)\n",
+            "ingestionTime": 1760475444186
+        },
+        {
+            "timestamp": 1760475444165,
+            "message": "Collecting aws-cdk.asset-node-proxy-agent-v6<3.0.0,>=2.0.1 (from aws-cdk-lib==2.133.0->-r cdk/requirements.txt (line 1))\n",
+            "ingestionTime": 1760475444186
+        },
+        {
+            "timestamp": 1760475444165,
+            "message": "  Downloading aws_cdk.asset_node_proxy_agent_v6-2.1.0-py3-none-any.whl.metadata (1.1 kB)\n",
+            "ingestionTime": 1760475444186
+        },
+        {
+            "timestamp": 1760475444165,
+            "message": "Collecting jsii<2.0.0,>=1.94.0 (from aws-cdk-lib==2.133.0->-r cdk/requirements.txt (line 1))\n",
+            "ingestionTime": 1760475444186
+        },
+        {
+            "timestamp": 1760475444165,
+            "message": "  Downloading jsii-1.116.0-py3-none-any.whl.metadata (79 kB)\n",
+            "ingestionTime": 1760475444186
+        },
+        {
+            "timestamp": 1760475444165,
+            "message": "Collecting publication>=0.0.3 (from aws-cdk-lib==2.133.0->-r cdk/requirements.txt (line 1))\n",
+            "ingestionTime": 1760475444186
+        },
+        {
+            "timestamp": 1760475444165,
+            "message": "  Downloading publication-0.0.3-py2.py3-none-any.whl.metadata (8.7 kB)\n",
+            "ingestionTime": 1760475444186
+        },
+        {
+            "timestamp": 1760475444165,
+            "message": "Collecting typeguard~=2.13.3 (from aws-cdk-lib==2.133.0->-r cdk/requirements.txt (line 1))\n",
+            "ingestionTime": 1760475444186
+        },
+        {
+            "timestamp": 1760475444165,
+            "message": "  Downloading typeguard-2.13.3-py3-none-any.whl.metadata (3.6 kB)\n",
+            "ingestionTime": 1760475444186
+        },
+        {
+            "timestamp": 1760475444165,
+            "message": "Collecting attrs<26.0,>=21.2 (from jsii<2.0.0,>=1.94.0->aws-cdk-lib==2.133.0->-r cdk/requirements.txt (line 1))\n",
+            "ingestionTime": 1760475444186
+        },
+        {
+            "timestamp": 1760475444165,
+            "message": "  Downloading attrs-25.4.0-py3-none-any.whl.metadata (10 kB)\n",
+            "ingestionTime": 1760475444186
+        },
+        {
+            "timestamp": 1760475444165,
+            "message": "Collecting cattrs<25.3,>=1.8 (from jsii<2.0.0,>=1.94.0->aws-cdk-lib==2.133.0->-r cdk/requirements.txt (line 1))\n",
+            "ingestionTime": 1760475444186
+        },
+        {
+            "timestamp": 1760475444165,
+            "message": "  Downloading cattrs-25.2.0-py3-none-any.whl.metadata (8.4 kB)\n",
+            "ingestionTime": 1760475444209
+        },
+        {
+            "timestamp": 1760475446221,
+            "message": "Collecting importlib_resources>=5.2.0 (from jsii<2.0.0,>=1.94.0->aws-cdk-lib==2.133.0->-r cdk/requirements.txt (line 1))\n",
+            "ingestionTime": 1760475446228
+        },
+        {
+            "timestamp": 1760475446221,
+            "message": "  Downloading importlib_resources-6.5.2-py3-none-any.whl.metadata (3.9 kB)\n",
+            "ingestionTime": 1760475446228
+        },
+        {
+            "timestamp": 1760475446221,
+            "message": "Requirement already satisfied: python-dateutil in /root/.pyenv/versions/3.11.13/lib/python3.11/site-packages (from jsii<2.0.0,>=1.94.0->aws-cdk-lib==2.133.0->-r cdk/requirements.txt (line 1)) (2.9.0.post0)\n",
+            "ingestionTime": 1760475446228
+        },
+        {
+            "timestamp": 1760475446221,
+            "message": "Collecting typing_extensions<5.0,>=3.8 (from jsii<2.0.0,>=1.94.0->aws-cdk-lib==2.133.0->-r cdk/requirements.txt (line 1))\n",
+            "ingestionTime": 1760475446228
+        },
+        {
+            "timestamp": 1760475446221,
+            "message": "  Downloading typing_extensions-4.15.0-py3-none-any.whl.metadata (3.3 kB)\n",
+            "ingestionTime": 1760475446228
+        },
+        {
+            "timestamp": 1760475446221,
+            "message": "INFO: pip is looking at multiple versions of aws-cdk-aws-lambda-python-alpha to determine which version is compatible with other requirements. This could take a while.\n",
+            "ingestionTime": 1760475446228
+        },
+        {
+            "timestamp": 1760475446221,
+            "message": "Collecting aws-cdk.aws-lambda-python-alpha (from -r cdk/requirements.txt (line 4))\n",
+            "ingestionTime": 1760475446228
+        },
+        {
+            "timestamp": 1760475446221,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.219.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475446228
+        },
+        {
+            "timestamp": 1760475446221,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.218.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475446228
+        },
+        {
+            "timestamp": 1760475446221,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.217.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475446228
+        },
+        {
+            "timestamp": 1760475446221,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.216.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475446228
+        },
+        {
+            "timestamp": 1760475446221,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.215.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475446228
+        },
+        {
+            "timestamp": 1760475446221,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.214.1a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475446228
+        },
+        {
+            "timestamp": 1760475446221,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.214.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475446228
+        },
+        {
+            "timestamp": 1760475446221,
+            "message": "INFO: pip is still looking at multiple versions of aws-cdk-aws-lambda-python-alpha to determine which version is compatible with other requirements. This could take a while.\n",
+            "ingestionTime": 1760475446228
+        },
+        {
+            "timestamp": 1760475446221,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.213.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475446228
+        },
+        {
+            "timestamp": 1760475446221,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.212.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475446228
+        },
+        {
+            "timestamp": 1760475446221,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.211.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475446228
+        },
+        {
+            "timestamp": 1760475446221,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.210.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475446228
+        },
+        {
+            "timestamp": 1760475446221,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.209.1a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475446228
+        },
+        {
+            "timestamp": 1760475446221,
+            "message": "INFO: This is taking longer than usual. You might need to provide the dependency resolver with stricter constraints to reduce runtime. See https://pip.pypa.io/warnings/backtracking for guidance. If you want to abort this run, press Ctrl + C.\n",
+            "ingestionTime": 1760475446228
+        },
+        {
+            "timestamp": 1760475446221,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.209.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475446228
+        },
+        {
+            "timestamp": 1760475446221,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.208.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475446228
+        },
+        {
+            "timestamp": 1760475446221,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.207.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475446228
+        },
+        {
+            "timestamp": 1760475446221,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.206.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475446228
+        },
+        {
+            "timestamp": 1760475446221,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.205.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475446228
+        },
+        {
+            "timestamp": 1760475446221,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.204.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475446228
+        },
+        {
+            "timestamp": 1760475446221,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.203.1a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475446228
+        },
+        {
+            "timestamp": 1760475446221,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.203.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475446228
+        },
+        {
+            "timestamp": 1760475446221,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.202.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475446228
+        },
+        {
+            "timestamp": 1760475446221,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.201.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475446228
+        },
+        {
+            "timestamp": 1760475446221,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.200.2a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475446228
+        },
+        {
+            "timestamp": 1760475446221,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.200.1a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475446228
+        },
+        {
+            "timestamp": 1760475446221,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.200.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475446228
+        },
+        {
+            "timestamp": 1760475446221,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.199.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475446228
+        },
+        {
+            "timestamp": 1760475446221,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.198.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475446228
+        },
+        {
+            "timestamp": 1760475446221,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.197.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475446228
+        },
+        {
+            "timestamp": 1760475446221,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.196.1a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475446228
+        },
+        {
+            "timestamp": 1760475446221,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.196.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475446228
+        },
+        {
+            "timestamp": 1760475446221,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.195.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475446228
+        },
+        {
+            "timestamp": 1760475446221,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.194.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475446228
+        },
+        {
+            "timestamp": 1760475446221,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.193.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475446228
+        },
+        {
+            "timestamp": 1760475446221,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.192.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475446228
+        },
+        {
+            "timestamp": 1760475446221,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.191.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475446228
+        },
+        {
+            "timestamp": 1760475446221,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.190.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475446228
+        },
+        {
+            "timestamp": 1760475446221,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.189.1a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475446228
+        },
+        {
+            "timestamp": 1760475446221,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.189.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475446228
+        },
+        {
+            "timestamp": 1760475446221,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.188.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475446228
+        },
+        {
+            "timestamp": 1760475446221,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.187.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475446228
+        },
+        {
+            "timestamp": 1760475446221,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.186.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475446228
+        },
+        {
+            "timestamp": 1760475446221,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.185.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475446242
+        },
+        {
+            "timestamp": 1760475448254,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.184.1a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475448257
+        },
+        {
+            "timestamp": 1760475448254,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.184.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475448257
+        },
+        {
+            "timestamp": 1760475448254,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.183.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475448257
+        },
+        {
+            "timestamp": 1760475448254,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.182.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475448257
+        },
+        {
+            "timestamp": 1760475448254,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.181.1a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475448257
+        },
+        {
+            "timestamp": 1760475448254,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.181.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475448257
+        },
+        {
+            "timestamp": 1760475448254,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.180.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475448257
+        },
+        {
+            "timestamp": 1760475448254,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.179.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475448257
+        },
+        {
+            "timestamp": 1760475448254,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.178.2a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475448257
+        },
+        {
+            "timestamp": 1760475448254,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.178.1a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475448257
+        },
+        {
+            "timestamp": 1760475448254,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.178.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475448257
+        },
+        {
+            "timestamp": 1760475448254,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.177.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475448257
+        },
+        {
+            "timestamp": 1760475448254,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.176.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475448257
+        },
+        {
+            "timestamp": 1760475448254,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.175.1a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475448257
+        },
+        {
+            "timestamp": 1760475448254,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.175.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475448257
+        },
+        {
+            "timestamp": 1760475448254,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.174.1a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475448257
+        },
+        {
+            "timestamp": 1760475448254,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.174.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475448257
+        },
+        {
+            "timestamp": 1760475448254,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.173.4a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475448257
+        },
+        {
+            "timestamp": 1760475448254,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.173.3a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475448257
+        },
+        {
+            "timestamp": 1760475448254,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.173.2a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475448257
+        },
+        {
+            "timestamp": 1760475448254,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.173.1a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475448257
+        },
+        {
+            "timestamp": 1760475448254,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.173.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475448257
+        },
+        {
+            "timestamp": 1760475448254,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.172.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475448257
+        },
+        {
+            "timestamp": 1760475448254,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.171.1a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475448257
+        },
+        {
+            "timestamp": 1760475448254,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.171.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475448257
+        },
+        {
+            "timestamp": 1760475448254,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.170.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475448257
+        },
+        {
+            "timestamp": 1760475448254,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.169.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475448257
+        },
+        {
+            "timestamp": 1760475448254,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.168.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475448257
+        },
+        {
+            "timestamp": 1760475448254,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.167.2a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475448257
+        },
+        {
+            "timestamp": 1760475448254,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.167.1a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475448257
+        },
+        {
+            "timestamp": 1760475448254,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.167.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475448257
+        },
+        {
+            "timestamp": 1760475448254,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.166.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475448257
+        },
+        {
+            "timestamp": 1760475448254,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.165.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475448257
+        },
+        {
+            "timestamp": 1760475448254,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.164.1a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475448257
+        },
+        {
+            "timestamp": 1760475448254,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.164.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475448257
+        },
+        {
+            "timestamp": 1760475448254,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.163.1a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475448257
+        },
+        {
+            "timestamp": 1760475448254,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.163.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475448257
+        },
+        {
+            "timestamp": 1760475448254,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.162.1a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475448257
+        },
+        {
+            "timestamp": 1760475448254,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.162.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475448257
+        },
+        {
+            "timestamp": 1760475448254,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.161.1a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475448257
+        },
+        {
+            "timestamp": 1760475448254,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.161.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475448257
+        },
+        {
+            "timestamp": 1760475448254,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.160.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475448257
+        },
+        {
+            "timestamp": 1760475448254,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.159.1a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475448257
+        },
+        {
+            "timestamp": 1760475448254,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.159.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475448257
+        },
+        {
+            "timestamp": 1760475448254,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.158.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475448257
+        },
+        {
+            "timestamp": 1760475448254,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.157.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475448257
+        },
+        {
+            "timestamp": 1760475448254,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.156.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475448257
+        },
+        {
+            "timestamp": 1760475448254,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.155.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475448257
+        },
+        {
+            "timestamp": 1760475448254,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.154.1a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475448257
+        },
+        {
+            "timestamp": 1760475448254,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.154.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475448257
+        },
+        {
+            "timestamp": 1760475448254,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.153.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475448257
+        },
+        {
+            "timestamp": 1760475450268,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.152.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475450272
+        },
+        {
+            "timestamp": 1760475450268,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.151.1a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475450272
+        },
+        {
+            "timestamp": 1760475450268,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.151.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475450272
+        },
+        {
+            "timestamp": 1760475450268,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.150.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475450272
+        },
+        {
+            "timestamp": 1760475450268,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.149.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475450272
+        },
+        {
+            "timestamp": 1760475450268,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.148.1a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475450272
+        },
+        {
+            "timestamp": 1760475450268,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.148.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475450272
+        },
+        {
+            "timestamp": 1760475450268,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.147.3a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475450272
+        },
+        {
+            "timestamp": 1760475450268,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.147.2a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475450272
+        },
+        {
+            "timestamp": 1760475450268,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.147.1a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475450272
+        },
+        {
+            "timestamp": 1760475450268,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.147.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475450272
+        },
+        {
+            "timestamp": 1760475450268,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.146.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475450272
+        },
+        {
+            "timestamp": 1760475450268,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.145.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475450272
+        },
+        {
+            "timestamp": 1760475450268,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.144.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475450272
+        },
+        {
+            "timestamp": 1760475450268,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.143.1a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475450272
+        },
+        {
+            "timestamp": 1760475450268,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.143.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475450272
+        },
+        {
+            "timestamp": 1760475450268,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.142.1a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475450272
+        },
+        {
+            "timestamp": 1760475450268,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.142.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475450272
+        },
+        {
+            "timestamp": 1760475450268,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.141.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475450272
+        },
+        {
+            "timestamp": 1760475450268,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.140.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475450272
+        },
+        {
+            "timestamp": 1760475450268,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.139.1a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475450272
+        },
+        {
+            "timestamp": 1760475450268,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.139.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475450272
+        },
+        {
+            "timestamp": 1760475450268,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.138.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475450272
+        },
+        {
+            "timestamp": 1760475450268,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.137.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475450272
+        },
+        {
+            "timestamp": 1760475450268,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.136.1a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475450272
+        },
+        {
+            "timestamp": 1760475450268,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.136.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475450272
+        },
+        {
+            "timestamp": 1760475450268,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.135.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475450272
+        },
+        {
+            "timestamp": 1760475450268,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.134.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475450272
+        },
+        {
+            "timestamp": 1760475450268,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.133.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760475450272
+        },
+        {
+            "timestamp": 1760475450268,
+            "message": "Requirement already satisfied: six>=1.5 in /root/.pyenv/versions/3.11.13/lib/python3.11/site-packages (from python-dateutil->jsii<2.0.0,>=1.94.0->aws-cdk-lib==2.133.0->-r cdk/requirements.txt (line 1)) (1.17.0)\n",
+            "ingestionTime": 1760475450272
+        },
+        {
+            "timestamp": 1760475450268,
+            "message": "Downloading aws_cdk_lib-2.133.0-py3-none-any.whl (34.4 MB)\n",
+            "ingestionTime": 1760475450272
+        },
+        {
+            "timestamp": 1760475450268,
+            "message": 

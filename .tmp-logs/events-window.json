@@ -1,0 +1,1385 @@
+{
+    "events": [
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476146702,
+            "message": "[Container] 2025/10/14 21:09:00.941099 Running on CodeBuild On-demand\n",
+            "ingestionTime": 1760476146727,
+            "eventId": "39259929975692319422685996339926247242803919974413434880"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476146702,
+            "message": "[Container] 2025/10/14 21:09:00.941109 Waiting for agent ping\n",
+            "ingestionTime": 1760476146727,
+            "eventId": "39259929975692319422685996339926247242803919974413434881"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476146702,
+            "message": "[Container] 2025/10/14 21:09:01.042238 Waiting for DOWNLOAD_SOURCE\n",
+            "ingestionTime": 1760476146727,
+            "eventId": "39259929975692319422685996339926247242803919974413434882"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476146702,
+            "message": "[Container] 2025/10/14 21:09:02.592369 Phase is DOWNLOAD_SOURCE\n",
+            "ingestionTime": 1760476146727,
+            "eventId": "39259929975692319422685996339926247242803919974413434883"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476146702,
+            "message": "[Container] 2025/10/14 21:09:02.593692 CODEBUILD_SRC_DIR=/codebuild/output/src1270469752/src\n",
+            "ingestionTime": 1760476146727,
+            "eventId": "39259929975692319422685996339926247242803919974413434884"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476146702,
+            "message": "[Container] 2025/10/14 21:09:02.594279 YAML location is /codebuild/output/src1270469752/src/buildspec.yml\n",
+            "ingestionTime": 1760476146727,
+            "eventId": "39259929975692319422685996339926247242803919974413434885"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476146702,
+            "message": "[Container] 2025/10/14 21:09:02.595092 Selecting shell bash as specified in buildspec.\n",
+            "ingestionTime": 1760476146727,
+            "eventId": "39259929975692319422685996339926247242803919974413434886"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476146702,
+            "message": "[Container] 2025/10/14 21:09:02.598080 Setting HTTP client timeout to higher timeout for S3 source\n",
+            "ingestionTime": 1760476146727,
+            "eventId": "39259929975692319422685996339926247242803919974413434887"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476146702,
+            "message": "[Container] 2025/10/14 21:09:02.598232 Processing environment variables\n",
+            "ingestionTime": 1760476146727,
+            "eventId": "39259929975692319422685996339926247242803919974413434888"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476146702,
+            "message": "[Container] 2025/10/14 21:09:02.831675 Selecting 'python' runtime version '3.11' based on manual selections...\n",
+            "ingestionTime": 1760476146727,
+            "eventId": "39259929975692319422685996339926247242803919974413434889"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476146702,
+            "message": "[Container] 2025/10/14 21:09:02.831694 Selecting 'nodejs' runtime version '20' based on manual selections...\n",
+            "ingestionTime": 1760476146727,
+            "eventId": "39259929975692319422685996339926247242803919974413434890"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476146702,
+            "message": "[Container] 2025/10/14 21:09:04.874310 Running command echo \"Installing Node.js version 20 ...\"\n",
+            "ingestionTime": 1760476146727,
+            "eventId": "39259929975692319422685996339926247242803919974413434891"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476146702,
+            "message": "Installing Node.js version 20 ...\n",
+            "ingestionTime": 1760476146727,
+            "eventId": "39259929975692319422685996339926247242803919974413434892"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476146702,
+            "message": "\n",
+            "ingestionTime": 1760476146727,
+            "eventId": "39259929975692319422685996339926247242803919974413434893"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476146702,
+            "message": "[Container] 2025/10/14 21:09:04.879551 Running command n $NODE_20_VERSION\n",
+            "ingestionTime": 1760476146727,
+            "eventId": "39259929975692319422685996339926247242803919974413434894"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476146702,
+            "message": "     copying : node/20.19.2\n",
+            "ingestionTime": 1760476146727,
+            "eventId": "39259929975692319422685996339926247242803919974413434895"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476178797,
+            "message": "   installed : v20.19.2\n",
+            "ingestionTime": 1760476178817,
+            "eventId": "39259930691434736569526346106309133305325753190757040128"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476178797,
+            "message": "\n",
+            "ingestionTime": 1760476178817,
+            "eventId": "39259930691434736569526346106309133305325753190757040129"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476178797,
+            "message": "[Container] 2025/10/14 21:09:37.104913 Running command echo \"Installing Python version 3.11 ...\"\n",
+            "ingestionTime": 1760476178817,
+            "eventId": "39259930691434736569526346106309133305325753190757040130"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476178797,
+            "message": "Installing Python version 3.11 ...\n",
+            "ingestionTime": 1760476178817,
+            "eventId": "39259930691434736569526346106309133305325753190757040131"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476178797,
+            "message": "\n",
+            "ingestionTime": 1760476178817,
+            "eventId": "39259930691434736569526346106309133305325753190757040132"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476178797,
+            "message": "[Container] 2025/10/14 21:09:37.110660 Running command pyenv global $PYTHON_311_VERSION\n",
+            "ingestionTime": 1760476178817,
+            "eventId": "39259930691434736569526346106309133305325753190757040133"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476178797,
+            "message": "\n",
+            "ingestionTime": 1760476178817,
+            "eventId": "39259930691434736569526346106309133305325753190757040134"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476178797,
+            "message": "[Container] 2025/10/14 21:09:37.606637 Moving to directory /codebuild/output/src1270469752/src\n",
+            "ingestionTime": 1760476178817,
+            "eventId": "39259930691434736569526346106309133305325753190757040135"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476178797,
+            "message": "[Container] 2025/10/14 21:09:37.606661 Cache is not defined in the buildspec\n",
+            "ingestionTime": 1760476178817,
+            "eventId": "39259930691434736569526346106309133305325753190757040136"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476178797,
+            "message": "[Container] 2025/10/14 21:09:37.645546 Skip cache due to: no paths specified to be cached\n",
+            "ingestionTime": 1760476178817,
+            "eventId": "39259930691434736569526346106309133305325753190757040137"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476178797,
+            "message": "[Container] 2025/10/14 21:09:37.645947 Registering with agent\n",
+            "ingestionTime": 1760476178817,
+            "eventId": "39259930691434736569526346106309133305325753190757040138"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476178797,
+            "message": "[Container] 2025/10/14 21:09:37.678976 Phases found in YAML: 4\n",
+            "ingestionTime": 1760476178817,
+            "eventId": "39259930691434736569526346106309133305325753190757040139"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476178797,
+            "message": "[Container] 2025/10/14 21:09:37.678997  INSTALL: 3 commands\n",
+            "ingestionTime": 1760476178817,
+            "eventId": "39259930691434736569526346106309133305325753190757040140"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476178797,
+            "message": "[Container] 2025/10/14 21:09:37.679002  PRE_BUILD: 7 commands\n",
+            "ingestionTime": 1760476178817,
+            "eventId": "39259930691434736569526346106309133305325753190757040141"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476178797,
+            "message": "[Container] 2025/10/14 21:09:37.679006  BUILD: 4 commands\n",
+            "ingestionTime": 1760476178817,
+            "eventId": "39259930691434736569526346106309133305325753190757040142"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476178797,
+            "message": "[Container] 2025/10/14 21:09:37.679011  POST_BUILD: 6 commands\n",
+            "ingestionTime": 1760476178817,
+            "eventId": "39259930691434736569526346106309133305325753190757040143"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476178797,
+            "message": "[Container] 2025/10/14 21:09:37.679375 Phase complete: DOWNLOAD_SOURCE State: SUCCEEDED\n",
+            "ingestionTime": 1760476178817,
+            "eventId": "39259930691434736569526346106309133305325753190757040144"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476178797,
+            "message": "[Container] 2025/10/14 21:09:37.679389 Phase context status code:  Message: \n",
+            "ingestionTime": 1760476178817,
+            "eventId": "39259930691434736569526346106309133305325753190757040145"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476178797,
+            "message": "[Container] 2025/10/14 21:09:37.782687 Entering phase INSTALL\n",
+            "ingestionTime": 1760476178817,
+            "eventId": "39259930691434736569526346106309133305325753190757040146"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476178797,
+            "message": "[Container] 2025/10/14 21:09:37.816426 Running command npm install -g aws-cdk@2\n",
+            "ingestionTime": 1760476178817,
+            "eventId": "39259930691434736569526346106309133305325753190757040147"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476186841,
+            "message": "\n",
+            "ingestionTime": 1760476186860,
+            "eventId": "39259930870821930946506678666545952717567753460508852224"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476186841,
+            "message": "added 2 packages in 6s\n",
+            "ingestionTime": 1760476186860,
+            "eventId": "39259930870821930946506678666545952717567753460508852225"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476186841,
+            "message": "\n",
+            "ingestionTime": 1760476186860,
+            "eventId": "39259930870821930946506678666545952717567753460508852226"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476186841,
+            "message": "[Container] 2025/10/14 21:09:45.217900 Running command pip install -r cdk/requirements.txt\n",
+            "ingestionTime": 1760476186860,
+            "eventId": "39259930870821930946506678666545952717567753460508852227"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476198879,
+            "message": "Collecting aws-cdk-lib==2.133.0 (from -r cdk/requirements.txt (line 1))\n",
+            "ingestionTime": 1760476198898,
+            "eventId": "39259931139278301646418320058906151983582869385145679872"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476198879,
+            "message": "  Downloading aws_cdk_lib-2.133.0-py3-none-any.whl.metadata (59 kB)\n",
+            "ingestionTime": 1760476198898,
+            "eventId": "39259931139278301646418320058906151983582869385145679873"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476198879,
+            "message": "Collecting constructs<11.0.0,>=10.0.0 (from -r cdk/requirements.txt (line 2))\n",
+            "ingestionTime": 1760476198898,
+            "eventId": "39259931139278301646418320058906151983582869385145679874"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476198879,
+            "message": "  Downloading constructs-10.4.2-py3-none-any.whl.metadata (2.9 kB)\n",
+            "ingestionTime": 1760476198898,
+            "eventId": "39259931139278301646418320058906151983582869385145679875"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476198879,
+            "message": "Collecting aws-cdk.aws-cognito-identitypool-alpha==2.133.0a0 (from -r cdk/requirements.txt (line 3))\n",
+            "ingestionTime": 1760476198898,
+            "eventId": "39259931139278301646418320058906151983582869385145679876"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476198879,
+            "message": "  Downloading aws_cdk.aws_cognito_identitypool_alpha-2.133.0a0-py3-none-any.whl.metadata (18 kB)\n",
+            "ingestionTime": 1760476198898,
+            "eventId": "39259931139278301646418320058906151983582869385145679877"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476198879,
+            "message": "Collecting aws-cdk.aws-lambda-python-alpha (from -r cdk/requirements.txt (line 4))\n",
+            "ingestionTime": 1760476198898,
+            "eventId": "39259931139278301646418320058906151983582869385145679878"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476198879,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.220.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476198898,
+            "eventId": "39259931139278301646418320058906151983582869385145679879"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476198879,
+            "message": "Collecting aws-cdk.asset-awscli-v1<3.0.0,>=2.2.202 (from aws-cdk-lib==2.133.0->-r cdk/requirements.txt (line 1))\n",
+            "ingestionTime": 1760476198898,
+            "eventId": "39259931139278301646418320058906151983582869385145679880"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476198879,
+            "message": "  Downloading aws_cdk_asset_awscli_v1-2.2.256-py3-none-any.whl.metadata (1.1 kB)\n",
+            "ingestionTime": 1760476198898,
+            "eventId": "39259931139278301646418320058906151983582869385145679881"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476198879,
+            "message": "Collecting aws-cdk.asset-kubectl-v20<3.0.0,>=2.1.2 (from aws-cdk-lib==2.133.0->-r cdk/requirements.txt (line 1))\n",
+            "ingestionTime": 1760476198898,
+            "eventId": "39259931139278301646418320058906151983582869385145679882"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476198879,
+            "message": "  Downloading aws_cdk.asset_kubectl_v20-2.1.4-py3-none-any.whl.metadata (1.1 kB)\n",
+            "ingestionTime": 1760476198898,
+            "eventId": "39259931139278301646418320058906151983582869385145679883"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476198879,
+            "message": "Collecting aws-cdk.asset-node-proxy-agent-v6<3.0.0,>=2.0.1 (from aws-cdk-lib==2.133.0->-r cdk/requirements.txt (line 1))\n",
+            "ingestionTime": 1760476198898,
+            "eventId": "39259931139278301646418320058906151983582869385145679884"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476198879,
+            "message": "  Downloading aws_cdk.asset_node_proxy_agent_v6-2.1.0-py3-none-any.whl.metadata (1.1 kB)\n",
+            "ingestionTime": 1760476198898,
+            "eventId": "39259931139278301646418320058906151983582869385145679885"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476198879,
+            "message": "Collecting jsii<2.0.0,>=1.94.0 (from aws-cdk-lib==2.133.0->-r cdk/requirements.txt (line 1))\n",
+            "ingestionTime": 1760476198898,
+            "eventId": "39259931139278301646418320058906151983582869385145679886"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476198879,
+            "message": "  Downloading jsii-1.116.0-py3-none-any.whl.metadata (79 kB)\n",
+            "ingestionTime": 1760476198912,
+            "eventId": "39259931139278301646418320058923035500423120454129876992"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476198879,
+            "message": "Collecting publication>=0.0.3 (from aws-cdk-lib==2.133.0->-r cdk/requirements.txt (line 1))\n",
+            "ingestionTime": 1760476198912,
+            "eventId": "39259931139278301646418320058923035500423120454129876993"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476198879,
+            "message": "  Downloading publication-0.0.3-py2.py3-none-any.whl.metadata (8.7 kB)\n",
+            "ingestionTime": 1760476198912,
+            "eventId": "39259931139278301646418320058923035500423120454129876994"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476200923,
+            "message": "Collecting typeguard~=2.13.3 (from aws-cdk-lib==2.133.0->-r cdk/requirements.txt (line 1))\n",
+            "ingestionTime": 1760476200926,
+            "eventId": "39259931184861024832214913762656656537539351731022200832"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476200923,
+            "message": "  Downloading typeguard-2.13.3-py3-none-any.whl.metadata (3.6 kB)\n",
+            "ingestionTime": 1760476200926,
+            "eventId": "39259931184861024832214913762656656537539351731022200833"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476200923,
+            "message": "Collecting attrs<26.0,>=21.2 (from jsii<2.0.0,>=1.94.0->aws-cdk-lib==2.133.0->-r cdk/requirements.txt (line 1))\n",
+            "ingestionTime": 1760476200926,
+            "eventId": "39259931184861024832214913762656656537539351731022200834"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476200923,
+            "message": "  Downloading attrs-25.4.0-py3-none-any.whl.metadata (10 kB)\n",
+            "ingestionTime": 1760476200926,
+            "eventId": "39259931184861024832214913762656656537539351731022200835"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476200923,
+            "message": "Collecting cattrs<25.3,>=1.8 (from jsii<2.0.0,>=1.94.0->aws-cdk-lib==2.133.0->-r cdk/requirements.txt (line 1))\n",
+            "ingestionTime": 1760476200926,
+            "eventId": "39259931184861024832214913762656656537539351731022200836"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476200923,
+            "message": "  Downloading cattrs-25.2.0-py3-none-any.whl.metadata (8.4 kB)\n",
+            "ingestionTime": 1760476200926,
+            "eventId": "39259931184861024832214913762656656537539351731022200837"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476200923,
+            "message": "Collecting importlib_resources>=5.2.0 (from jsii<2.0.0,>=1.94.0->aws-cdk-lib==2.133.0->-r cdk/requirements.txt (line 1))\n",
+            "ingestionTime": 1760476200926,
+            "eventId": "39259931184861024832214913762656656537539351731022200838"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476200923,
+            "message": "  Downloading importlib_resources-6.5.2-py3-none-any.whl.metadata (3.9 kB)\n",
+            "ingestionTime": 1760476200926,
+            "eventId": "39259931184861024832214913762656656537539351731022200839"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476200923,
+            "message": "Requirement already satisfied: python-dateutil in /root/.pyenv/versions/3.11.13/lib/python3.11/site-packages (from jsii<2.0.0,>=1.94.0->aws-cdk-lib==2.133.0->-r cdk/requirements.txt (line 1)) (2.9.0.post0)\n",
+            "ingestionTime": 1760476200926,
+            "eventId": "39259931184861024832214913762656656537539351731022200840"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476200923,
+            "message": "Collecting typing_extensions<5.0,>=3.8 (from jsii<2.0.0,>=1.94.0->aws-cdk-lib==2.133.0->-r cdk/requirements.txt (line 1))\n",
+            "ingestionTime": 1760476200926,
+            "eventId": "39259931184861024832214913762656656537539351731022200841"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476200923,
+            "message": "  Downloading typing_extensions-4.15.0-py3-none-any.whl.metadata (3.3 kB)\n",
+            "ingestionTime": 1760476200926,
+            "eventId": "39259931184861024832214913762656656537539351731022200842"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476200923,
+            "message": "INFO: pip is looking at multiple versions of aws-cdk-aws-lambda-python-alpha to determine which version is compatible with other requirements. This could take a while.\n",
+            "ingestionTime": 1760476200926,
+            "eventId": "39259931184861024832214913762656656537539351731022200843"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476200923,
+            "message": "Collecting aws-cdk.aws-lambda-python-alpha (from -r cdk/requirements.txt (line 4))\n",
+            "ingestionTime": 1760476200926,
+            "eventId": "39259931184861024832214913762656656537539351731022200844"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476200923,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.219.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476200926,
+            "eventId": "39259931184861024832214913762656656537539351731022200845"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476200923,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.218.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476200926,
+            "eventId": "39259931184861024832214913762656656537539351731022200846"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476200923,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.217.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476200926,
+            "eventId": "39259931184861024832214913762656656537539351731022200847"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476200923,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.216.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476200926,
+            "eventId": "39259931184861024832214913762656656537539351731022200848"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476200923,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.215.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476200926,
+            "eventId": "39259931184861024832214913762656656537539351731022200849"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476200923,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.214.1a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476200926,
+            "eventId": "39259931184861024832214913762656656537539351731022200850"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476200923,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.214.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476200926,
+            "eventId": "39259931184861024832214913762656656537539351731022200851"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476200923,
+            "message": "INFO: pip is still looking at multiple versions of aws-cdk-aws-lambda-python-alpha to determine which version is compatible with other requirements. This could take a while.\n",
+            "ingestionTime": 1760476200926,
+            "eventId": "39259931184861024832214913762656656537539351731022200852"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476200923,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.213.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476200926,
+            "eventId": "39259931184861024832214913762656656537539351731022200853"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476200923,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.212.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476200926,
+            "eventId": "39259931184861024832214913762656656537539351731022200854"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476200923,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.211.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476200926,
+            "eventId": "39259931184861024832214913762656656537539351731022200855"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476200923,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.210.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476200926,
+            "eventId": "39259931184861024832214913762656656537539351731022200856"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476200923,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.209.1a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476200926,
+            "eventId": "39259931184861024832214913762656656537539351731022200857"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476200923,
+            "message": "INFO: This is taking longer than usual. You might need to provide the dependency resolver with stricter constraints to reduce runtime. See https://pip.pypa.io/warnings/backtracking for guidance. If you want to abort this run, press Ctrl + C.\n",
+            "ingestionTime": 1760476200926,
+            "eventId": "39259931184861024832214913762656656537539351731022200858"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476200923,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.209.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476200926,
+            "eventId": "39259931184861024832214913762656656537539351731022200859"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476200923,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.208.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476200926,
+            "eventId": "39259931184861024832214913762656656537539351731022200860"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476200923,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.207.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476200926,
+            "eventId": "39259931184861024832214913762656656537539351731022200861"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476200923,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.206.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476200926,
+            "eventId": "39259931184861024832214913762656656537539351731022200862"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476200923,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.205.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476200926,
+            "eventId": "39259931184861024832214913762656656537539351731022200863"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476200923,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.204.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476200926,
+            "eventId": "39259931184861024832214913762656656537539351731022200864"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476200923,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.203.1a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476200926,
+            "eventId": "39259931184861024832214913762656656537539351731022200865"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476200923,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.203.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476200926,
+            "eventId": "39259931184861024832214913762656656537539351731022200866"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476200923,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.202.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476200926,
+            "eventId": "39259931184861024832214913762656656537539351731022200867"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476200923,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.201.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476200926,
+            "eventId": "39259931184861024832214913762656656537539351731022200868"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476200923,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.200.2a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476200926,
+            "eventId": "39259931184861024832214913762656656537539351731022200869"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476200923,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.200.1a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476200926,
+            "eventId": "39259931184861024832214913762656656537539351731022200870"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476200923,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.200.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476200926,
+            "eventId": "39259931184861024832214913762656656537539351731022200871"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476200923,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.199.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476200926,
+            "eventId": "39259931184861024832214913762656656537539351731022200872"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476200923,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.198.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476200926,
+            "eventId": "39259931184861024832214913762656656537539351731022200873"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476200923,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.197.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476200926,
+            "eventId": "39259931184861024832214913762656656537539351731022200874"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476200923,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.196.1a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476200926,
+            "eventId": "39259931184861024832214913762656656537539351731022200875"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476200923,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.196.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476200926,
+            "eventId": "39259931184861024832214913762656656537539351731022200876"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476200923,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.195.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476200926,
+            "eventId": "39259931184861024832214913762656656537539351731022200877"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476200923,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.194.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476200926,
+            "eventId": "39259931184861024832214913762656656537539351731022200878"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476200923,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.193.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476200926,
+            "eventId": "39259931184861024832214913762656656537539351731022200879"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476200923,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.192.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476200926,
+            "eventId": "39259931184861024832214913762656656537539351731022200880"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476200923,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.191.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476200926,
+            "eventId": "39259931184861024832214913762656656537539351731022200881"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476200923,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.190.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476200926,
+            "eventId": "39259931184861024832214913762656656537539351731022200882"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476200923,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.189.1a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476200926,
+            "eventId": "39259931184861024832214913762656656537539351731022200883"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476200923,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.189.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476200926,
+            "eventId": "39259931184861024832214913762656656537539351731022200884"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476200923,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.188.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476200926,
+            "eventId": "39259931184861024832214913762656656537539351731022200885"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476200923,
+            "message": "  Downloading aws_cdk_aws_lambda_python_alpha-2.187.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476200926,
+            "eventId": "39259931184861024832214913762656656537539351731022200886"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476202939,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.186.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476202943,
+            "eventId": "39259931229819327152452650018431054623311080916858306560"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476202939,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.185.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476202943,
+            "eventId": "39259931229819327152452650018431054623311080916858306561"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476202939,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.184.1a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476202943,
+            "eventId": "39259931229819327152452650018431054623311080916858306562"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476202939,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.184.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476202943,
+            "eventId": "39259931229819327152452650018431054623311080916858306563"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476202939,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.183.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476202943,
+            "eventId": "39259931229819327152452650018431054623311080916858306564"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476202939,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.182.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476202943,
+            "eventId": "39259931229819327152452650018431054623311080916858306565"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476202939,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.181.1a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476202943,
+            "eventId": "39259931229819327152452650018431054623311080916858306566"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476202939,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.181.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476202943,
+            "eventId": "39259931229819327152452650018431054623311080916858306567"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476202939,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.180.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476202943,
+            "eventId": "39259931229819327152452650018431054623311080916858306568"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476202939,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.179.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476202943,
+            "eventId": "39259931229819327152452650018431054623311080916858306569"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476202939,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.178.2a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476202943,
+            "eventId": "39259931229819327152452650018431054623311080916858306570"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476202939,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.178.1a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476202943,
+            "eventId": "39259931229819327152452650018431054623311080916858306571"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476202939,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.178.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476202943,
+            "eventId": "39259931229819327152452650018431054623311080916858306572"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476202939,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.177.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476202943,
+            "eventId": "39259931229819327152452650018431054623311080916858306573"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476202939,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.176.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476202943,
+            "eventId": "39259931229819327152452650018431054623311080916858306574"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476202939,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.175.1a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476202943,
+            "eventId": "39259931229819327152452650018431054623311080916858306575"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476202939,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.175.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476202943,
+            "eventId": "39259931229819327152452650018431054623311080916858306576"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476202939,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.174.1a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476202943,
+            "eventId": "39259931229819327152452650018431054623311080916858306577"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476202939,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.174.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476202943,
+            "eventId": "39259931229819327152452650018431054623311080916858306578"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476202939,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.173.4a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476202943,
+            "eventId": "39259931229819327152452650018431054623311080916858306579"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476202939,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.173.3a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476202943,
+            "eventId": "39259931229819327152452650018431054623311080916858306580"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476202939,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.173.2a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476202943,
+            "eventId": "39259931229819327152452650018431054623311080916858306581"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476202939,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.173.1a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476202943,
+            "eventId": "39259931229819327152452650018431054623311080916858306582"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476202939,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.173.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476202943,
+            "eventId": "39259931229819327152452650018431054623311080916858306583"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476202939,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.172.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476202943,
+            "eventId": "39259931229819327152452650018431054623311080916858306584"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476202939,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.171.1a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476202943,
+            "eventId": "39259931229819327152452650018431054623311080916858306585"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476202939,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.171.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476202943,
+            "eventId": "39259931229819327152452650018431054623311080916858306586"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476202939,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.170.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476202943,
+            "eventId": "39259931229819327152452650018431054623311080916858306587"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476202939,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.169.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476202943,
+            "eventId": "39259931229819327152452650018431054623311080916858306588"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476202939,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.168.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476202943,
+            "eventId": "39259931229819327152452650018431054623311080916858306589"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476202939,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.167.2a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476202943,
+            "eventId": "39259931229819327152452650018431054623311080916858306590"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476202939,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.167.1a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476202943,
+            "eventId": "39259931229819327152452650018431054623311080916858306591"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476202939,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.167.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476202943,
+            "eventId": "39259931229819327152452650018431054623311080916858306592"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476202939,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.166.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476202943,
+            "eventId": "39259931229819327152452650018431054623311080916858306593"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476202939,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.165.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476202943,
+            "eventId": "39259931229819327152452650018431054623311080916858306594"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476202939,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.164.1a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476202943,
+            "eventId": "39259931229819327152452650018431054623311080916858306595"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476202939,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.164.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476202943,
+            "eventId": "39259931229819327152452650018431054623311080916858306596"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476202939,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.163.1a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476202943,
+            "eventId": "39259931229819327152452650018431054623311080916858306597"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476202939,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.163.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476202943,
+            "eventId": "39259931229819327152452650018431054623311080916858306598"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476202939,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.162.1a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476202943,
+            "eventId": "39259931229819327152452650018431054623311080916858306599"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476202939,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.162.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476202943,
+            "eventId": "39259931229819327152452650018431054623311080916858306600"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476202939,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.161.1a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476202943,
+            "eventId": "39259931229819327152452650018431054623311080916858306601"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476202939,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.161.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476202943,
+            "eventId": "39259931229819327152452650018431054623311080916858306602"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476202939,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.160.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476202943,
+            "eventId": "39259931229819327152452650018431054623311080916858306603"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476202939,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.159.1a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476202943,
+            "eventId": "39259931229819327152452650018431054623311080916858306604"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476202939,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.159.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476202943,
+            "eventId": "39259931229819327152452650018431054623311080916858306605"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476202939,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.158.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476202943,
+            "eventId": "39259931229819327152452650018431054623311080916858306606"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476202939,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.157.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476202943,
+            "eventId": "39259931229819327152452650018431054623311080916858306607"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476202939,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.156.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476202943,
+            "eventId": "39259931229819327152452650018431054623311080916858306608"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476202939,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.155.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476202943,
+            "eventId": "39259931229819327152452650018431054623311080916858306609"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476202939,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.154.1a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476202943,
+            "eventId": "39259931229819327152452650018431054623311080916858306610"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476202939,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.154.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476202943,
+            "eventId": "39259931229819327152452650018431054623311080916858306611"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476202939,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.153.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476202943,
+            "eventId": "39259931229819327152452650018431054623311080916858306612"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476202939,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.152.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476202943,
+            "eventId": "39259931229819327152452650018431054623311080916858306613"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476202939,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.151.1a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476202943,
+            "eventId": "39259931229819327152452650018431054623311080916858306614"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476202939,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.151.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476202943,
+            "eventId": "39259931229819327152452650018431054623311080916858306615"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476204954,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.150.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476204957,
+            "eventId": "39259931274755328727491855651060280017707715028716552192"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476204954,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.149.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476204957,
+            "eventId": "39259931274755328727491855651060280017707715028716552193"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476204954,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.148.1a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476204957,
+            "eventId": "39259931274755328727491855651060280017707715028716552194"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476204954,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.148.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476204957,
+            "eventId": "39259931274755328727491855651060280017707715028716552195"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476204954,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.147.3a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476204957,
+            "eventId": "39259931274755328727491855651060280017707715028716552196"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476204954,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.147.2a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476204957,
+            "eventId": "39259931274755328727491855651060280017707715028716552197"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476204954,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.147.1a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476204957,
+            "eventId": "39259931274755328727491855651060280017707715028716552198"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476204954,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.147.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476204957,
+            "eventId": "39259931274755328727491855651060280017707715028716552199"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476204954,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.146.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476204957,
+            "eventId": "39259931274755328727491855651060280017707715028716552200"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476204954,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.145.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476204957,
+            "eventId": "39259931274755328727491855651060280017707715028716552201"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476204954,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.144.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476204957,
+            "eventId": "39259931274755328727491855651060280017707715028716552202"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476204954,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.143.1a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476204957,
+            "eventId": "39259931274755328727491855651060280017707715028716552203"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476204954,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.143.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476204957,
+            "eventId": "39259931274755328727491855651060280017707715028716552204"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476204954,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.142.1a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476204957,
+            "eventId": "39259931274755328727491855651060280017707715028716552205"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476204954,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.142.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476204957,
+            "eventId": "39259931274755328727491855651060280017707715028716552206"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476204954,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.141.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476204957,
+            "eventId": "39259931274755328727491855651060280017707715028716552207"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476204954,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.140.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476204957,
+            "eventId": "39259931274755328727491855651060280017707715028716552208"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476204954,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.139.1a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476204957,
+            "eventId": "39259931274755328727491855651060280017707715028716552209"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476204954,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.139.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476204957,
+            "eventId": "39259931274755328727491855651060280017707715028716552210"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476204954,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.138.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476204957,
+            "eventId": "39259931274755328727491855651060280017707715028716552211"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476204954,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.137.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476204957,
+            "eventId": "39259931274755328727491855651060280017707715028716552212"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476204954,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.136.1a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476204957,
+            "eventId": "39259931274755328727491855651060280017707715028716552213"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476204954,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.136.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476204957,
+            "eventId": "39259931274755328727491855651060280017707715028716552214"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476204954,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.135.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476204957,
+            "eventId": "39259931274755328727491855651060280017707715028716552215"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476204954,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.134.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476204957,
+            "eventId": "39259931274755328727491855651060280017707715028716552216"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476204954,
+            "message": "  Downloading aws_cdk.aws_lambda_python_alpha-2.133.0a0-py3-none-any.whl.metadata (12 kB)\n",
+            "ingestionTime": 1760476204957,
+            "eventId": "39259931274755328727491855651060280017707715028716552217"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476204954,
+            "message": "Requirement already satisfied: six>=1.5 in /root/.pyenv/versions/3.11.13/lib/python3.11/site-packages (from python-dateutil->jsii<2.0.0,>=1.94.0->aws-cdk-lib==2.133.0->-r cdk/requirements.txt (line 1)) (1.17.0)\n",
+            "ingestionTime": 1760476204957,
+            "eventId": "39259931274755328727491855651060280017707715028716552218"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476204954,
+            "message": "Downloading aws_cdk_lib-2.133.0-py3-none-any.whl (34.4 MB)\n",
+            "ingestionTime": 1760476204957,
+            "eventId": "39259931274755328727491855651060280017707715028716552219"
+        },
+        {
+            "logStreamName": "7bb63f18-4e9a-45ea-8293-9c9194d16aad",
+            "timestamp": 1760476204954,
+            "message": 

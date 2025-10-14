@@ -1,0 +1,39 @@
+{
+    "Version":  "2012-10-17",
+    "Statement":  [
+                      {
+                          "Effect":  "Allow",
+                          "Resource":  "arn:aws:codepipeline:us-east-1:026654547457:ResumeApplicationPipeline",
+                          "Action":  [
+                                         "codepipeline:StartPipelineExecution",
+                                         "codepipeline:GetPipelineState"
+                                     ]
+                      },
+                      {
+                          "Effect":  "Allow",
+                          "Resource":  "arn:aws:codebuild:us-east-1:026654547457:project/ResumeCodeBuildProjectD1E56-gCu4iZ1SDpcn",
+                          "Action":  [
+                                         "codebuild:BatchGetBuilds"
+                                     ]
+                      },
+                      {
+                          "Effect":  "Allow",
+                          "Resource":  "*",
+                          "Action":  [
+                                         "codebuild:ListBuildsForProject"
+                                     ]
+                      },
+                      {
+                          "Effect":  "Allow",
+                          "Resource":  [
+                                           "arn:aws:logs:us-east-1:026654547457:log-group:/aws/codebuild/ResumeCodeBuildProjectD1E56-gCu4iZ1SDpcn",
+                                           "arn:aws:logs:us-east-1:026654547457:log-group:/aws/codebuild/ResumeCodeBuildProjectD1E56-gCu4iZ1SDpcn:log-stream:*"
+                                       ],
+                          "Action":  [
+                                         "logs:FilterLogEvents",
+                                         "logs:GetLogEvents",
+                                         "logs:DescribeLogStreams"
+                                     ]
+                      }
+                  ]
+}

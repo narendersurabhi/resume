@@ -1,4 +1,13 @@
 {
+  "scripts": {
+    "cdk:deploy:pipeline": "cdk deploy ResumePipelineStack --exclusively -a \".\\.venv\\Scripts\\python.exe -m cdk.app\" -c account=026654547457 -c region=us-east-1 --require-approval never --profile resume-deploy",
+    "cdk:synth": "cdk synth -a \".\\.venv\\Scripts\\python.exe -m cdk.app\" -c account=026654547457 -c region=us-east-1 --profile resume-deploy",
+    "cdk:destroy:pipeline": "cdk destroy ResumePipelineStack --exclusively -a \".\\.venv\\Scripts\\python.exe -m cdk.app\" -c account=026654547457 -c region=us-east-1 --profile resume-deploy --force",
+    "cdk:list": "cdk list -a \".\\.venv\\Scripts\\python.exe -m cdk.app\" -c account=026654547457 -c region=us-east-1 --profile resume-deploy",
+    "cdk:diff": "cdk diff -a \".\\.venv\\Scripts\\python.exe -m cdk.app\" -c account=026654547457 -c region=us-east-1 --profile resume-deploy",
+    "pipeline:open-connection": "powershell -NoProfile -ExecutionPolicy Bypass -File .\\scripts\\open-connection.ps1 -Profile resume-deploy -Region us-east-1",
+    "pipeline:deploy:params": "powershell -NoProfile -ExecutionPolicy Bypass -File .\\scripts\\deploy-pipeline.ps1 -Profile resume-deploy -Region us-east-1"
+  },
   "devDependencies": {
     "aws-cdk": "^2.1029.3"
   }
