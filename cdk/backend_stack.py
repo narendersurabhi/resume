@@ -69,15 +69,23 @@ class BackendStack(Stack):
             removal_policy=RemovalPolicy.RETAIN,
         )
 
-        allowed_origin = self.node.try_get_context("frontendOrigin") or "*"
-        
+        # Determine the frontend origin for CORS
+        # Priority: explicit context value -> CloudFront distribution id -> fallback '*'
+        allowed_origin_ctx = self.node.try_get_context("frontendOrigin")
+        if allowed_origin_ctx and str(allowed_origin_ctx).strip():
+            frontend_domain = str(allowed_origin_ctx).strip()
+        elif cf_dist_id:
+            frontend_domain = f"https://{cf_dist_id}.cloudfront.net"
+        else:
+            frontend_domain = "*"
+
         lambda_env = {
             "BUCKET_NAME": bucket.bucket_name,
             "TABLE_NAME": table.table_name,
             "BEDROCK_MODEL_ID": 'openai.gpt-oss-120b-1:0',
             "OUTPUT_PREFIX": "generated",    
             "CF_DIST_ID": cf_dist_id,
-            "FRONTEND_ORIGIN": f"https://{cf_dist_id}.cloudfront.net",
+            "FRONTEND_ORIGIN": frontend_domain if frontend_domain != "*" else "*",
             "CDK_DEFAULT_REGION": CDK_DEFAULT_REGION,
         }
 
@@ -145,15 +153,13 @@ class BackendStack(Stack):
 
         generate_function.add_to_role_policy(iam.PolicyStatement(actions=["bedrock:InvokeModel"], resources=[f"arn:aws:bedrock:{self.region}::foundation-model/openai.gpt-oss-120b-1:0"]))
 
-        frontend_domain = f"https://{cf_dist_id}.cloudfront.net"  # put your CF URL here
-
-        # API Gateway with permissive CORS (adjust as needed)
+        # API Gateway with CORS (adjust as needed)
         api = apigateway.RestApi(
             self,
             "ResumeApi",
             rest_api_name="ResumeTailorService",
             default_cors_preflight_options=apigateway.CorsOptions(
-                allow_origins=[frontend_domain],
+                allow_origins=(apigateway.Cors.ALL_ORIGINS if frontend_domain == "*" else [frontend_domain]),
                 allow_methods=apigateway.Cors.ALL_METHODS,
                 allow_headers=["*"],
                 allow_credentials=False,  # set True only if sending cookies
@@ -167,11 +173,14 @@ class BackendStack(Stack):
         rtype_4xx = getattr(apigateway.ResponseType, "DEFAULT_4_XX", None) or getattr(apigateway.ResponseType, "DEFAULT_4XX")
         rtype_5xx = getattr(apigateway.ResponseType, "DEFAULT_5_XX", None) or getattr(apigateway.ResponseType, "DEFAULT_5XX")
 
+        # Access-Control-Allow-Origin header formatting for gateway responses
+        acao_value = "'*'" if frontend_domain == "*" else f"'{frontend_domain}'"
+
         api.add_gateway_response(
             "Default4xx",
             type=rtype_4xx,
             response_headers={
-                "Access-Control-Allow-Origin": f"'{frontend_domain}'",
+                "Access-Control-Allow-Origin": acao_value,
                 "Access-Control-Allow-Headers": "'*'",
                 "Access-Control-Allow-Methods": "'GET,POST,OPTIONS'",
             },
@@ -180,7 +189,7 @@ class BackendStack(Stack):
             "Default5xx",
             type=rtype_5xx,
             response_headers={
-                "Access-Control-Allow-Origin": f"'{frontend_domain}'",
+                "Access-Control-Allow-Origin": acao_value,
                 "Access-Control-Allow-Headers": "'*'",
                 "Access-Control-Allow-Methods": "'GET,POST,OPTIONS'",
             },
