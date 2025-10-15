@@ -71,6 +71,9 @@ class PipelineStack(Stack):
         upload_repo = ecr.Repository.from_repository_name(
             self, "PipelineUploadRepo", "resume-upload"
         )
+        renderer_repo = ecr.Repository.from_repository_name(
+            self, "PipelineRendererRepo", "resume-renderer"
+        )
 
         connection = codestarconnections.CfnConnection(
             self,
@@ -134,6 +137,7 @@ class PipelineStack(Stack):
                         download_repo.repository_arn,
                         generate_repo.repository_arn,
                         upload_repo.repository_arn,
+                        renderer_repo.repository_arn,
                     ],
                 ),
                 iam.PolicyStatement(
@@ -227,6 +231,7 @@ class PipelineStack(Stack):
                 "DOWNLOAD_REPO": codebuild.BuildEnvironmentVariable(value=download_repo.repository_name),
                 "GENERATE_REPO": codebuild.BuildEnvironmentVariable(value=generate_repo.repository_name),
                 "UPLOAD_REPO": codebuild.BuildEnvironmentVariable(value=upload_repo.repository_name),
+                "RENDERER_REPO": codebuild.BuildEnvironmentVariable(value=renderer_repo.repository_name),
                 "DEPLOY_APP": codebuild.BuildEnvironmentVariable(value="false"),
             },
         )
