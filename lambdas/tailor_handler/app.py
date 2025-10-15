@@ -72,13 +72,20 @@ def _user_prompt(resume_text: str, job_desc: str) -> str:
 
 
 def _get_openai_key() -> str:
-    val = secrets.get_secret_value(SecretId=OPENAI_SECRET_NAME)
-    s = val.get("SecretString") or ""
+    # Prefer environment variable when present
+    env_key = os.getenv("OPENAI_API_KEY")
+    if env_key:
+        return env_key
     try:
-        obj = json.loads(s)
-        return obj.get("OPENAI_API_KEY") or obj.get("api_key") or s
+        val = secrets.get_secret_value(SecretId=OPENAI_SECRET_NAME)
+        s = val.get("SecretString") or ""
+        try:
+            obj = json.loads(s)
+            return obj.get("OPENAI_API_KEY") or obj.get("api_key") or s
+        except Exception:
+            return s
     except Exception:
-        return s
+        return os.getenv("OPENAI_API_KEY", "")
 
 
 def _call_openai(model: str, resume_text: str, job_desc: str) -> Dict[str, Any]:
