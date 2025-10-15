@@ -102,6 +102,9 @@ class BackendStack(Stack):
         upload_repo = ecr.Repository.from_repository_name(
             self, "UploadRepository", "resume-upload"
         )
+        renderer_repo = ecr.Repository.from_repository_name(
+            self, "RendererRepository", "resume-renderer"
+        )
 
         common_image_props = dict(
             architecture=lambda_.Architecture.X86_64,
@@ -258,11 +261,23 @@ class BackendStack(Stack):
             encryption=s3.BucketEncryption.S3_MANAGED,
         )
 
-        # Container-based renderer with docxtpl + jsonschema
+        # Renderer image tag (built by pipeline and pushed to ECR)
+        renderer_image_tag = CfnParameter(
+            self,
+            "RendererImageTag",
+            type="String",
+            default="latest",
+            description="Tag for the renderer Lambda container image.",
+        )
+
+        # ECR-based renderer: no local Docker needed during CDK deploy
         render_fn = lambda_.DockerImageFunction(
             self,
             "RenderContainer",
-            code=lambda_.DockerImageCode.from_image_asset("lambdas/renderer_container"),
+            code=lambda_.DockerImageCode.from_ecr(
+                repository=renderer_repo,
+                tag_or_digest=renderer_image_tag.value_as_string,
+            ),
             memory_size=1024,
             timeout=Duration.seconds(60),
             environment={
@@ -272,10 +287,10 @@ class BackendStack(Stack):
             },
             log_retention=logs.RetentionDays.ONE_WEEK,
         )
+        templates_bucket.grant_read(render_fn)
 
         jobs_bucket.grant_read_write(tailor_fn)
         jobs_bucket.grant_read_write(render_fn)
-        templates_bucket.grant_read(render_fn)
         jobs_table.grant_read_write_data(tailor_fn)
         jobs_table.grant_read_write_data(render_fn)
 
