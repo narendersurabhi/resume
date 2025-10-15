@@ -1,4 +1,4 @@
-import json
+﻿import json
 import os
 import uuid
 import time
@@ -85,7 +85,7 @@ def handler(event, context):
                 title = h.get("title", "")
                 contact = h.get("contact", "")
                 if name or title:
-                    lines.append(para(f"{name} — {title}".strip(" —")))
+                    lines.append(para(f"{name} â€” {title}".strip(" â€”")))
                 if contact:
                     lines.append(para(contact))
                 if d.get("summary"):
@@ -96,12 +96,12 @@ def handler(event, context):
                     lines.append(para("Skills: " + ", ".join(d.get("skills", []))))
                 for exp in d.get("experience", []) or []:
                     lines.append(para(""))
-                    lines.append(para(f"{exp.get('title','')} — {exp.get('company','')} ({exp.get('start','')} - {exp.get('end','')})"))
+                    lines.append(para(f"{exp.get('title','')} â€” {exp.get('company','')} ({exp.get('start','')} - {exp.get('end','')})"))
                     for b in exp.get("bullets", []) or []:
-                        lines.append(para("• " + b))
+                        lines.append(para("â€¢ " + b))
                 for edu in d.get("education", []) or []:
                     lines.append(para(""))
-                    lines.append(para(f"{edu.get('degree','')} — {edu.get('school','')} ({edu.get('year','')})"))
+                    lines.append(para(f"{edu.get('degree','')} â€” {edu.get('school','')} ({edu.get('year','')})"))
 
                 document_xml = (
                     "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>"
@@ -113,6 +113,14 @@ def handler(event, context):
 
         if fmt not in ("docx", "pdf"):
             return _json_response(400, {"ok": False, "error": "format must be docx|pdf"})
+
+        # Validate JSON shape before rendering
+        def _expect(cond: bool, msg: str):
+            if not cond:
+                raise ValueError(msg)
+        _expect(isinstance(data, dict), "resumeJson must be object")
+        _expect("header" in data and isinstance(data["header"], dict), "missing header")
+        _expect("experience" in data and isinstance(data["experience"], list), "missing experience")
 
         # Produce DOCX always; if PDF requested, write DOCX and mark pdf key placeholder
         docx_bytes = build_docx_bytes(data)
@@ -141,3 +149,4 @@ def handler(event, context):
 
     except Exception as e:
         return _json_response(400, {"ok": False, "error": str(e)})
+

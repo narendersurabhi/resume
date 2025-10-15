@@ -2,10 +2,11 @@ import json
 import os
 import uuid
 import time
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, List
 
 import boto3
 import urllib.request
+from boto3.dynamodb.conditions import Attr
 
 
 S3_BUCKET = os.getenv("JOBS_BUCKET", "")
@@ -133,15 +134,98 @@ def _call_bedrock(model: str, resume_text: str, job_desc: str) -> Dict[str, Any]
     return json.loads(text or "{}")
 
 
+def _validate_resume_json(data: Dict[str, Any]) -> None:
+    """Lightweight schema validation without external deps."""
+    def expect(cond: bool, msg: str):
+        if not cond:
+            raise ValueError(f"Schema error: {msg}")
+
+    expect(isinstance(data, dict), "root must be object")
+    for k in ["header", "summary", "skills", "experience", "education"]:
+        expect(k in data, f"missing key {k}")
+    expect(isinstance(data["header"], dict), "header must be object")
+    expect(isinstance(data["summary"], str), "summary must be string")
+    expect(isinstance(data["skills"], list), "skills must be array")
+    expect(isinstance(data["experience"], list), "experience must be array")
+    expect(isinstance(data["education"], list), "education must be array")
+    for exp in data.get("experience", []):
+        expect(isinstance(exp, dict), "experience entry must be object")
+        expect("bullets" in exp and isinstance(exp["bullets"], list), "experience.bullets must be array")
+
+
+def _append_event(job_id: str, user_id: str, action: str, meta: Optional[Dict[str, Any]] = None) -> None:
+    if table is None:
+        return
+    ev = {"ts": int(time.time()), "userId": user_id, "action": action, "meta": meta or {}}
+    table.update_item(
+        Key={"jobId": job_id},
+        UpdateExpression="SET events = list_append(if_not_exists(events, :empty), :e), updatedAt=:ts",
+        ExpressionAttributeValues={":e": [ev], ":empty": [], ":ts": int(time.time())},
+    )
+
+
 def handler(event, context):
     try:
-        # Simple status endpoint reuse: GET /jobs/{jobId}
-        if event.get("httpMethod") == "GET" and table is not None:
-            path_params = event.get("pathParameters") or {}
-            j = path_params.get("jobId")
+        # Routing by method + path
+        http_method = (event.get("httpMethod") or "").upper()
+        path = event.get("path") or ""
+        qs = event.get("queryStringParameters") or {}
+        headers = {k.lower(): v for k, v in (event.get("headers") or {}).items()}
+
+        # GET /jobs -> list jobs for user
+        if http_method == "GET" and path.endswith("/jobs") and table is not None:
+            user_id_q = headers.get("x-user-id") or qs.get("userId") or "anonymous"
+            # simple scan with filter (ok for low volume)
+            resp = table.scan(FilterExpression=Attr("userId").eq(user_id_q))
+            return _json_response(200, {"ok": True, "items": resp.get("Items", [])})
+
+        # GET /jobs/{jobId}
+        if http_method == "GET" and table is not None and "/jobs/" in path:
+            parts = path.split("/jobs/")
+            j = parts[1] if len(parts) > 1 else None
             if j:
                 res = table.get_item(Key={"jobId": j})
-                return _json_response(200, {"ok": True, "job": res.get("Item")})
+                item = res.get("Item")
+                # share token access (view-only)
+                share = qs.get("share")
+                if share and item and item.get("shareToken") == share:
+                    return _json_response(200, {"ok": True, "job": item})
+                # role-based: header x-user-role, x-user-id
+                role = (headers.get("x-user-role") or "user").lower()
+                user_id_h = headers.get("x-user-id") or "anonymous"
+                if item and (role in ("manager", "admin") or item.get("userId") == user_id_h):
+                    return _json_response(200, {"ok": True, "job": item})
+                return _json_response(403, {"ok": False, "error": "forbidden"})
+
+        # POST /tailor/refine -> refine existing JSON using feedback
+        if http_method == "POST" and path.endswith("/tailor/refine"):
+            body_str = event.get("body") or "{}"
+            body = json.loads(body_str)
+            base_json = body.get("resumeJson") or {}
+            feedback = body.get("feedback") or {}
+            job_id = body.get("jobId") or uuid.uuid4().hex
+            user_id = (body.get("userId") or "anonymous").strip() or "anonymous"
+            prov, mdl = _choose_provider(body.get("provider"), body.get("model"))
+            # In a simple scaffold, append feedback to summary or bullets; if LLM enabled, ask model to revise
+            if ENABLE_LLM:
+                resume_text = json.dumps(base_json)
+                job_desc = json.dumps(feedback)
+                if prov == "openai":
+                    revised = _call_openai(mdl, resume_text, job_desc)
+                else:
+                    revised = _call_bedrock(mdl, resume_text, job_desc)
+            else:
+                revised = base_json
+            try:
+                _validate_resume_json(revised)
+            except Exception as ve:
+                return _json_response(400, {"ok": False, "error": str(ve)})
+            base_prefix = f"resume-jobs/{user_id}/{job_id}"
+            outputs_prefix = f"{base_prefix}/outputs"
+            key = f"{outputs_prefix}/tailored.json"
+            s3.put_object(Bucket=S3_BUCKET, Key=key, Body=json.dumps(revised, ensure_ascii=False, indent=2).encode("utf-8"))
+            _append_event(job_id, user_id, "refined", {"provider": prov, "model": mdl})
+            return _json_response(200, {"ok": True, "jobId": job_id, "jsonS3": {"bucket": S3_BUCKET, "key": key}})
 
         body_str = event.get("body") or "{}"
         body = json.loads(body_str)
@@ -191,6 +275,12 @@ def handler(event, context):
                 "extras": {},
             }
 
+        try:
+            _validate_resume_json(normalized)
+        except Exception as ve:
+            return _json_response(400, {"ok": False, "error": str(ve)})
+
+        # Basic cache: if content identical exists, reuse key path
         json_key = f"{outputs_prefix}/tailored.json"
         s3.put_object(Bucket=S3_BUCKET, Key=json_key, Body=json.dumps(normalized, ensure_ascii=False, indent=2).encode("utf-8"))
 
@@ -217,7 +307,10 @@ def handler(event, context):
                     }
                 ],
             }
+            # Create share token on first create
+            item["shareToken"] = uuid.uuid4().hex[:16]
             table.put_item(Item=item)
+            _append_event(job_id, user_id, "generated", {"provider": provider, "model": model})
 
         return _json_response(
             200,
