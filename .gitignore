@@ -20,3 +20,5 @@ __fix_blocks__
 __fix_docx__
 __inspect_out__
 __inspect_tpl__
+.tmp-iam/
+.tmp-logs/

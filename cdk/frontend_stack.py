@@ -132,11 +132,7 @@ def handler(event, context):
             principal=iam.ServicePrincipal("cloudformation.amazonaws.com"),
             action="lambda:InvokeFunction",
         )
-        config_writer.add_permission(  # optional broad invoke
-            "AllowAllInvoke",
-            principal=iam.AnyPrincipal(),
-            action="lambda:InvokeFunction",
-        )        
+        # Do NOT expose this function publicly; invocation is restricted to CloudFormation via the custom resource above.
 
         # --- Deploy SPA assets and invalidate CloudFront ---
         deploy = s3deploy.BucketDeployment(
