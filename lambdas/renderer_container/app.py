@@ -69,8 +69,12 @@ def handler(event, context):
         # Render with docxtpl
         tpl_stream = io.BytesIO(tpl_bytes)
         tpl = DocxTemplate(tpl_stream)
-        # Pass JSON as 'data' so template can use {{ data.header.name }}, etc.
-        tpl.render({"data": data})
+        # Render context supports both root keys and nested under 'data'
+        # so templates can use either {{ education }} or {{ data.education }}
+        ctx = {"data": data}
+        if isinstance(data, dict):
+            ctx.update(data)
+        tpl.render(ctx)
         out_stream = io.BytesIO()
         tpl.save(out_stream)
         out_bytes = out_stream.getvalue()
@@ -98,4 +102,3 @@ def handler(event, context):
 
     except Exception as e:
         return _json_response(400, {"ok": False, "error": str(e)})
-
