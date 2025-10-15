@@ -26,6 +26,7 @@ try {
         -a $app `
         -c account=026654547457 `
         -c region=$Region `
+        -c deployPipeline=true `
         --profile $Profile `
         --require-approval never `
         --parameters "ResumePipelineStack:RepositoryOwner=$Owner" `
@@ -37,4 +38,3 @@ catch {
     Write-Error $_
     exit 1
 }
-

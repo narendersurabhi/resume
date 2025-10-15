@@ -11,6 +11,13 @@
                       },
                       {
                           "Effect":  "Allow",
+                          "Resource":  "*",
+                          "Action":  [
+                                         "codepipeline:GetPipeline"
+                                     ]
+                      },
+                      {
+                          "Effect":  "Allow",
                           "Resource":  "arn:aws:codebuild:us-east-1:026654547457:project/ResumeCodeBuildProjectD1E56-gCu4iZ1SDpcn",
                           "Action":  [
                                          "codebuild:BatchGetBuilds"
@@ -20,7 +27,8 @@
                           "Effect":  "Allow",
                           "Resource":  "*",
                           "Action":  [
-                                         "codebuild:ListBuildsForProject"
+                                         "codebuild:ListBuildsForProject",
+                                         "codebuild:BatchGetProjects"
                                      ]
                       },
                       {

@@ -1,4 +1,4 @@
-# Resume Tailoring Platform
+﻿# Resume Tailoring Platform
 
 A reference implementation scaffold for a serverless resume tailoring application leveraging AWS-native services, AWS CDK, and a React + Tailwind CSS frontend.
 
@@ -29,36 +29,36 @@ A reference implementation scaffold for a serverless resume tailoring applicatio
 
 ```
 root/
-├── cdk/
-│   ├── app.py                 # CDK app entrypoint
-│   ├── backend_stack.py       # API Gateway, Lambdas, DynamoDB, S3
-│   ├── frontend_stack.py      # S3 website hosting + CloudFront distribution
-│   ├── auth_stack.py          # Cognito User & Identity pools
-│   └── requirements.txt       # Python dependencies for CDK app
-├── frontend/                  # React + Tailwind source
-│   ├── package.json
-│   ├── index.html
-│   ├── vite.config.js
-│   ├── tailwind.config.js
-│   ├── postcss.config.js
-│   ├── public/
-│   │   └── config.json        # Local dev runtime config (overwritten in deploy)
-│   └── src/
-│       ├── App.jsx
-│       ├── main.jsx
-│       ├── styles.css
-│       ├── components/
-│       │   ├── UploadForm.jsx
-│       │   ├── ResumeList.jsx
-│       │   └── GenerateButton.jsx
-│       └── pages/
-│           └── Dashboard.jsx
-├── lambdas/
-│   ├── upload_handler/app.py
-│   ├── generate_handler/app.py
-│   └── download_handler/app.py
-├── storage/                   # Local-only scratch space (S3 in production)
-└── README.md
+â”œâ”€â”€ cdk/
+â”‚   â”œâ”€â”€ app.py                 # CDK app entrypoint
+â”‚   â”œâ”€â”€ backend_stack.py       # API Gateway, Lambdas, DynamoDB, S3
+â”‚   â”œâ”€â”€ frontend_stack.py      # S3 website hosting + CloudFront distribution
+â”‚   â”œâ”€â”€ auth_stack.py          # Cognito User & Identity pools
+â”‚   â””â”€â”€ requirements.txt       # Python dependencies for CDK app
+â”œâ”€â”€ frontend/                  # React + Tailwind source
+â”‚   â”œâ”€â”€ package.json
+â”‚   â”œâ”€â”€ index.html
+â”‚   â”œâ”€â”€ vite.config.js
+â”‚   â”œâ”€â”€ tailwind.config.js
+â”‚   â”œâ”€â”€ postcss.config.js
+â”‚   â”œâ”€â”€ public/
+â”‚   â”‚   â””â”€â”€ config.json        # Local dev runtime config (overwritten in deploy)
+â”‚   â””â”€â”€ src/
+â”‚       â”œâ”€â”€ App.jsx
+â”‚       â”œâ”€â”€ main.jsx
+â”‚       â”œâ”€â”€ styles.css
+â”‚       â”œâ”€â”€ components/
+â”‚       â”‚   â”œâ”€â”€ UploadForm.jsx
+â”‚       â”‚   â”œâ”€â”€ ResumeList.jsx
+â”‚       â”‚   â””â”€â”€ GenerateButton.jsx
+â”‚       â””â”€â”€ pages/
+â”‚           â””â”€â”€ Dashboard.jsx
+â”œâ”€â”€ lambdas/
+â”‚   â”œâ”€â”€ upload_handler/app.py
+â”‚   â”œâ”€â”€ generate_handler/app.py
+â”‚   â””â”€â”€ download_handler/app.py
+â”œâ”€â”€ storage/                   # Local-only scratch space (S3 in production)
+â””â”€â”€ README.md
 ```
 
 ## Prerequisites
@@ -110,6 +110,42 @@ root/
   and let the existing pipeline run. If the infrastructure definition changed, re-run the command above once to apply the
   new configuration.
 
+## Pipeline Management (Recommended Workflow)
+
+- Safe defaults
+  - The pipeline stack is gated behind a context flag and is not synthesized by default. Only include it when needed.
+  - CodeBuild sets `DEPLOY_APP=false`, so the pipeline builds and pushes images but does not deploy app stacks by default.
+
+- Include or exclude the pipeline stack
+  - List stacks (no pipeline):
+    - `npx cdk list -a ".\\.venv\\Scripts\\python.exe -m cdk.app" -c account=026654547457 -c region=us-east-1`
+  - List stacks (with pipeline):
+    - `npx cdk list -a ".\\.venv\\Scripts\\python.exe -m cdk.app" -c account=026654547457 -c region=us-east-1 -c deployPipeline=true`
+
+- Deploy the pipeline only when required
+  - `npm run cdk:deploy:pipeline`
+    - Uses `-c deployPipeline=true` and deploys only `ResumePipelineStack`.
+  - Open the CodeConnections authorization page:
+    - `npm run pipeline:open-connection`
+  - Deploy pipeline with owner/repo/branch parameters (if you need to change them):
+    - `npm run pipeline:deploy:params -- -Owner <owner> -Repo <repo> -Branch <branch> -ConnectionName <name>`
+
+- What the pipeline does on pushes
+  - Source from GitHub via CodeStar Connections.
+  - Build stage (CodeBuild):
+    - Installs CDK + Python deps, installs frontend deps.
+    - Builds the frontend and three Docker images.
+    - Pushes images to ECR.
+    - Skips CDK app deploy unless `DEPLOY_APP=true`.
+
+- Deploying the application stacks
+  - Run CDK locally when you want to roll out a new image tag:
+    - `cdk deploy --app "python3.11 -m cdk.app" ResumeAuthStack ResumeBackendStack ResumeFrontendStack --require-approval never \\
+      --parameters ResumeBackendStack:DownloadImageTag=<tag> \\
+      --parameters ResumeBackendStack:GenerateImageTag=<tag> \\
+      --parameters ResumeBackendStack:UploadImageTag=<tag>`
+  - Optionally add a local npm script (e.g., `app:deploy`) to pass the latest tag.
+
 ### IAM permissions required to deploy `ResumePipelineStack`
 
 Ensure the AWS credentials configured in your local environment map to an IAM principal that can perform the following on
@@ -134,11 +170,11 @@ following runtime configuration is present:
 
 | Name | Required | Purpose |
 |------|----------|---------|
-| `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN` (if using temporary credentials) | ✅ | Authenticate the CDK CLI against your AWS account. |
-| `AWS_PROFILE` (alternative to the keys above) | ⚪️ | Select a named profile from your local AWS config instead of exporting keys directly. |
-| `AWS_REGION` / `AWS_DEFAULT_REGION` | ✅ | Match the region expected by the stacks (`us-east-1` by default via `cdk/cdk.json`). |
-| `CDK_DEFAULT_ACCOUNT`, `CDK_DEFAULT_REGION` | ⚪️ | Automatically populated by the CDK CLI, but you can set them explicitly when assuming roles or scripting deployments. |
-| `CF_DIST_ID` | ⚪️ | Optional CloudFront distribution ID propagated to the backend Lambda environment; leave empty on the first deploy and update later if you map an existing distribution. |
+| `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN` (if using temporary credentials) | âœ… | Authenticate the CDK CLI against your AWS account. |
+| `AWS_PROFILE` (alternative to the keys above) | âšªï¸ | Select a named profile from your local AWS config instead of exporting keys directly. |
+| `AWS_REGION` / `AWS_DEFAULT_REGION` | âœ… | Match the region expected by the stacks (`us-east-1` by default via `cdk/cdk.json`). |
+| `CDK_DEFAULT_ACCOUNT`, `CDK_DEFAULT_REGION` | âšªï¸ | Automatically populated by the CDK CLI, but you can set them explicitly when assuming roles or scripting deployments. |
+| `CF_DIST_ID` | âšªï¸ | Optional CloudFront distribution ID propagated to the backend Lambda environment; leave empty on the first deploy and update later if you map an existing distribution. |
 
 These variables align with the stack definitions. For example, `cdk/cdk.json` pins the default account and region, while
 `cdk/backend_stack.py` reads `CF_DIST_ID` and region settings when defining Lambda environment variables. Exporting the
@@ -170,3 +206,4 @@ cdk destroy --app "python -m cdk.app" --all
 ```
 
 > **Note:** S3 buckets are retained to preserve uploaded/generated documents. Empty or delete buckets manually before destroying stacks if full cleanup is required.
+
