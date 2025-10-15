@@ -210,6 +210,7 @@ def handler(event, context):
             policy=cr.AwsCustomResourcePolicy.from_sdk_calls(
                 resources=cr.AwsCustomResourcePolicy.ANY_RESOURCE  # keep simple
             ),
+            install_latest_aws_sdk=False,
         )
 
         write_cfg.node.add_dependency(deploy)            # after files/cf invalidation
