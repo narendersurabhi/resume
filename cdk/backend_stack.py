@@ -247,23 +247,35 @@ class BackendStack(Stack):
             log_retention=logs.RetentionDays.ONE_WEEK,
         )
 
-        render_fn = lambda_.Function(
+        # Templates bucket for DOCX templates
+        templates_bucket = s3.Bucket(
             self,
-            "RenderHandler",
-            runtime=lambda_.Runtime.PYTHON_3_12,
-            handler="app.handler",
-            code=lambda_.Code.from_asset("lambdas/render_handler"),
+            "ResumeTemplatesBucket",
+            versioned=True,
+            block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
+            removal_policy=RemovalPolicy.RETAIN,
+            auto_delete_objects=False,
+            encryption=s3.BucketEncryption.S3_MANAGED,
+        )
+
+        # Container-based renderer with docxtpl + jsonschema
+        render_fn = lambda_.DockerImageFunction(
+            self,
+            "RenderContainer",
+            code=lambda_.DockerImageCode.from_image_asset("lambdas/renderer_container"),
+            memory_size=1024,
+            timeout=Duration.seconds(60),
             environment={
                 "JOBS_BUCKET": jobs_bucket.bucket_name,
                 "JOBS_TABLE": jobs_table.table_name,
+                "TEMPLATES_BUCKET": templates_bucket.bucket_name,
             },
-            memory_size=512,
-            timeout=Duration.seconds(30),
             log_retention=logs.RetentionDays.ONE_WEEK,
         )
 
         jobs_bucket.grant_read_write(tailor_fn)
         jobs_bucket.grant_read_write(render_fn)
+        templates_bucket.grant_read(render_fn)
         jobs_table.grant_read_write_data(tailor_fn)
         jobs_table.grant_read_write_data(render_fn)
 
