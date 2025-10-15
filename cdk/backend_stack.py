@@ -1,4 +1,4 @@
-"""Backend infrastructure stack for the resume tailoring platform."""
+﻿"""Backend infrastructure stack for the resume tailoring platform."""
 from aws_cdk import (
     CfnParameter,
     Duration,
@@ -205,3 +205,72 @@ class BackendStack(Stack):
         self.table = table
 
         CfnOutput(self, "ApiUrl", value=self.api_url, export_name="ResumeApiUrl")
+
+        # --------------------
+        # Jobs store (DynamoDB + S3) for tailoring/rendering workflows
+        # --------------------
+        jobs_table = dynamodb.Table(
+            self,
+            "ResumeJobs",
+            partition_key=dynamodb.Attribute(name="jobId", type=dynamodb.AttributeType.STRING),
+            billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
+            removal_policy=RemovalPolicy.RETAIN,
+        )
+
+        jobs_bucket = s3.Bucket(
+            self,
+            "ResumeJobsBucket",
+            versioned=True,
+            block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
+            removal_policy=RemovalPolicy.RETAIN,
+            auto_delete_objects=False,
+            encryption=s3.BucketEncryption.S3_MANAGED,
+        )
+
+        # Tailor (generate) Lambda - zip-based to avoid impacting existing container builds
+        tailor_fn = lambda_.Function(
+            self,
+            "TailorHandler",
+            runtime=lambda_.Runtime.PYTHON_3_12,
+            handler="app.handler",
+            code=lambda_.Code.from_asset("lambdas/tailor_handler"),
+            environment={
+                "JOBS_BUCKET": jobs_bucket.bucket_name,
+                "JOBS_TABLE": jobs_table.table_name,
+                "MODEL_PROVIDER": "openai",
+                "MODEL_ID": "gpt-4o-mini",
+            },
+            memory_size=512,
+            timeout=Duration.seconds(30),
+            log_retention=logs.RetentionDays.ONE_WEEK,
+        )
+
+        render_fn = lambda_.Function(
+            self,
+            "RenderHandler",
+            runtime=lambda_.Runtime.PYTHON_3_12,
+            handler="app.handler",
+            code=lambda_.Code.from_asset("lambdas/render_handler"),
+            environment={
+                "JOBS_BUCKET": jobs_bucket.bucket_name,
+                "JOBS_TABLE": jobs_table.table_name,
+            },
+            memory_size=512,
+            timeout=Duration.seconds(30),
+            log_retention=logs.RetentionDays.ONE_WEEK,
+        )
+
+        jobs_bucket.grant_read_write(tailor_fn)
+        jobs_bucket.grant_read_write(render_fn)
+        jobs_table.grant_read_write_data(tailor_fn)
+        jobs_table.grant_read_write_data(render_fn)
+
+        # API routes for tailoring and rendering
+        api.root.add_resource("tailor").add_method("POST", apigateway.LambdaIntegration(tailor_fn))
+        api.root.add_resource("render").add_method("POST", apigateway.LambdaIntegration(render_fn))
+
+        # (Optional) Job status fetch
+        jobs_res = api.root.add_resource("jobs").add_resource("{jobId}")
+        # Reuse tailor_fn to serve simple status for scaffold (could be a dedicated Lambda later)
+        jobs_res.add_method("GET", apigateway.LambdaIntegration(tailor_fn))
+
