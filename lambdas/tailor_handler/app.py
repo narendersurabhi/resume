@@ -1,4 +1,4 @@
-import json
+﻿import json
 import os
 import uuid
 import time
@@ -166,6 +166,12 @@ def _append_event(job_id: str, user_id: str, action: str, meta: Optional[Dict[st
 
 def handler(event, context):
     try:
+        # Identity (from Cognito authorizer if present)
+        rc = (event.get("requestContext") or {}).get("authorizer") or {}
+        claims = rc.get("claims") or {}
+        claim_user = claims.get("sub") or claims.get("cognito:username")
+        claim_groups = (claims.get("cognito:groups") or "").split(",") if claims.get("cognito:groups") else []
+
         # Routing by method + path
         http_method = (event.get("httpMethod") or "").upper()
         path = event.get("path") or ""
@@ -190,9 +196,9 @@ def handler(event, context):
                 share = qs.get("share")
                 if share and item and item.get("shareToken") == share:
                     return _json_response(200, {"ok": True, "job": item})
-                # role-based: header x-user-role, x-user-id
-                role = (headers.get("x-user-role") or "user").lower()
-                user_id_h = headers.get("x-user-id") or "anonymous"
+                # role-based from Cognito groups (fallback to headers)
+                role = (headers.get("x-user-role") or ("admin" if "Admin" in claim_groups else ("manager" if "Manager" in claim_groups else "user"))).lower()
+                user_id_h = headers.get("x-user-id") or claim_user or "anonymous"
                 if item and (role in ("manager", "admin") or item.get("userId") == user_id_h):
                     return _json_response(200, {"ok": True, "job": item})
                 return _json_response(403, {"ok": False, "error": "forbidden"})
@@ -204,7 +210,7 @@ def handler(event, context):
             base_json = body.get("resumeJson") or {}
             feedback = body.get("feedback") or {}
             job_id = body.get("jobId") or uuid.uuid4().hex
-            user_id = (body.get("userId") or "anonymous").strip() or "anonymous"
+            user_id = (body.get("userId") or claim_user or "anonymous").strip() or "anonymous"
             prov, mdl = _choose_provider(body.get("provider"), body.get("model"))
             # In a simple scaffold, append feedback to summary or bullets; if LLM enabled, ask model to revise
             if ENABLE_LLM:
@@ -326,3 +332,4 @@ def handler(event, context):
 
     except Exception as e:
         return _json_response(400, {"ok": False, "error": str(e)})
+

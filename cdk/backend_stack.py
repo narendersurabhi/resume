@@ -5,6 +5,7 @@ from aws_cdk import (
     RemovalPolicy,
     Stack,
     CfnOutput,
+    Fn,
     aws_apigateway as apigateway,
     aws_dynamodb as dynamodb,
     aws_ecr as ecr,
@@ -12,6 +13,7 @@ from aws_cdk import (
     aws_lambda as lambda_,
     aws_logs as logs,
     aws_s3 as s3,
+    aws_cognito as cognito,
 )
 from constructs import Construct
 import os
@@ -266,11 +268,44 @@ class BackendStack(Stack):
         jobs_table.grant_read_write_data(render_fn)
 
         # API routes for tailoring and rendering
-        api.root.add_resource("tailor").add_method("POST", apigateway.LambdaIntegration(tailor_fn))
-        api.root.add_resource("render").add_method("POST", apigateway.LambdaIntegration(render_fn))
+        # Cognito authorizer using exported User Pool from AuthStack
+        user_pool = cognito.UserPool.from_user_pool_id(
+            self,
+            "ImportedUserPool",
+            Fn.import_value("ResumeUserPoolId"),
+        )
+        authorizer = apigateway.CognitoUserPoolsAuthorizer(
+            self,
+            "ResumeApiAuthorizer",
+            cognito_user_pools=[user_pool],
+        )
 
-        # (Optional) Job status fetch
-        jobs_res = api.root.add_resource("jobs").add_resource("{jobId}")
-        # Reuse tailor_fn to serve simple status for scaffold (could be a dedicated Lambda later)
-        jobs_res.add_method("GET", apigateway.LambdaIntegration(tailor_fn))
+        api.root.add_resource("tailor").add_method(
+            "POST",
+            apigateway.LambdaIntegration(tailor_fn),
+            authorizer=authorizer,
+            authorization_type=apigateway.AuthorizationType.COGNITO,
+        )
+        api.root.add_resource("render").add_method(
+            "POST",
+            apigateway.LambdaIntegration(render_fn),
+            authorizer=authorizer,
+            authorization_type=apigateway.AuthorizationType.COGNITO,
+        )
+
+        # Jobs list and status
+        jobs_root = api.root.add_resource("jobs")
+        jobs_root.add_method(
+            "GET",
+            apigateway.LambdaIntegration(tailor_fn),
+            authorizer=authorizer,
+            authorization_type=apigateway.AuthorizationType.COGNITO,
+        )
+        jobs_res = jobs_root.add_resource("{jobId}")
+        jobs_res.add_method(
+            "GET",
+            apigateway.LambdaIntegration(tailor_fn),
+            authorizer=authorizer,
+            authorization_type=apigateway.AuthorizationType.COGNITO,
+        )
 
