@@ -285,10 +285,12 @@ class BackendStack(Stack):
                 "JOBS_BUCKET": jobs_bucket.bucket_name,
                 "JOBS_TABLE": jobs_table.table_name,
                 "TEMPLATES_BUCKET": templates_bucket.bucket_name,
+                "STORAGE_BUCKET": bucket.bucket_name,
             },
             log_retention=logs.RetentionDays.ONE_WEEK,
         )
         templates_bucket.grant_read(render_fn)
+        bucket.grant_read(render_fn)
 
         jobs_bucket.grant_read_write(tailor_fn)
         jobs_bucket.grant_read_write(render_fn)

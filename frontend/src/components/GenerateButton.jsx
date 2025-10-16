@@ -77,7 +77,7 @@ const GenerateButton = ({
               jobId: response.data?.jobId,
               userId: userId || tenantId || 'anonymous',
               jsonS3: response.data?.jsonS3,
-              templateId: 'default',
+              templateKey: selections.template.key,
               format: 'docx',
             });
           } catch (e) {

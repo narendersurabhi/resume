@@ -14,6 +14,7 @@ DDB = boto3.resource("dynamodb")
 JOBS_BUCKET = os.getenv("JOBS_BUCKET", "")
 JOBS_TABLE = os.getenv("JOBS_TABLE", "")
 TEMPLATES_BUCKET = os.getenv("TEMPLATES_BUCKET", "")
+STORAGE_BUCKET = os.getenv("STORAGE_BUCKET", "")
 
 TABLE = DDB.Table(JOBS_TABLE) if JOBS_TABLE else None
 
@@ -60,11 +61,19 @@ def handler(event, context):
         # Validate against JSON Schema
         validate(instance=data, schema=SCHEMA)
 
-        # Load template
-        if not TEMPLATES_BUCKET:
-            return _json_response(500, {"ok": False, "error": "TEMPLATES_BUCKET not configured"})
-        template_key = f"templates/{template_id}/resume.docx"
-        tpl_bytes = _download_s3({"bucket": TEMPLATES_BUCKET, "key": template_key})
+        # Load template: prefer explicit templateS3/templateKey, else fallback to templateId
+        tpl_bytes = None
+        if isinstance(body.get("templateS3"), dict):
+            tpl_bytes = _download_s3(body["templateS3"])
+        elif isinstance(body.get("templateKey"), str) and body["templateKey"].strip():
+            if not STORAGE_BUCKET:
+                return _json_response(500, {"ok": False, "error": "STORAGE_BUCKET not configured for templateKey"})
+            tpl_bytes = _download_s3({"bucket": STORAGE_BUCKET, "key": body["templateKey"]})
+        else:
+            if not TEMPLATES_BUCKET:
+                return _json_response(500, {"ok": False, "error": "TEMPLATES_BUCKET not configured"})
+            template_key = f"templates/{template_id}/resume.docx"
+            tpl_bytes = _download_s3({"bucket": TEMPLATES_BUCKET, "key": template_key})
 
         # Render with docxtpl
         tpl_stream = io.BytesIO(tpl_bytes)

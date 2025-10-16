@@ -206,13 +206,18 @@ const Dashboard = ({ apiUrl, userId, userGroups }) => {
     }
     setRenderingJobId(job.jobId);
     try {
-      await apiPost(apiUrl, 'render', {
+      const payload = {
         jobId: job.jobId,
         userId,
         jsonS3: job.outputs.json,
-        templateId: 'default',
         format: 'docx',
-      });
+      };
+      if (selections?.template?.key) {
+        payload.templateKey = selections.template.key;
+      } else {
+        payload.templateId = 'default';
+      }
+      await apiPost(apiUrl, 'render', payload);
       await loadJobs();
     } catch (error) {
       const msg = error.response?.data?.error || error.message || 'Unknown error';
