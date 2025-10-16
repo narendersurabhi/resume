@@ -82,13 +82,17 @@ def _choose_provider(req_provider: Optional[str], req_model: Optional[str]) -> T
     model = (req_model or DEFAULT_MODEL)
 
     if provider == "openai":
-        # If caller did not specify a model, prefer the first GPT-5 family model if accessible
+        # If caller did not specify a model, prefer GPT-5-Pro, then first GPT-5 family model if accessible
         if not (req_model and str(req_model).strip()):
             try:
                 models = _list_openai_models()
-                gpt5 = [m for m in models if isinstance(m, str) and m.lower().startswith("gpt-5")]
-                if gpt5:
-                    model = gpt5[0]
+                lower = [m.lower() for m in models]
+                if "gpt-5-pro" in lower:
+                    model = models[lower.index("gpt-5-pro")]
+                else:
+                    gpt5 = [m for m in models if isinstance(m, str) and m.lower().startswith("gpt-5")]
+                    if gpt5:
+                        model = gpt5[0]
             except Exception as e:
                 logger.info("Model autodetect skipped: %s", e)
 

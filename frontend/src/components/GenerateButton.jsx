@@ -35,7 +35,11 @@ const GenerateButton = ({
       }
       if (Array.isArray(list) && list.length > 0) {
         setModelOptions(list);
-        if (!list.includes(model)) setModel(list[0]);
+        if (!list.includes(model)) {
+          const lower = list.map((m) => String(m).toLowerCase());
+          const idxPro = lower.indexOf('gpt-5-pro');
+          setModel(idxPro >= 0 ? list[idxPro] : list[0]);
+        }
       } else {
         setModelOptions([model]);
       }
