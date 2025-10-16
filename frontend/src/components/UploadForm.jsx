@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import { apiPost } from '../lib/api.js';
 
 const categories = [
   { label: 'Approved Resume', value: 'approved' },
@@ -32,7 +32,7 @@ const UploadForm = ({ apiUrl, tenantId, onUploadComplete }) => {
 
     try {
       const content = await toBase64(file);
-      const response = await axios.post(`${apiUrl}upload`, {
+      const response = await apiPost(apiUrl, 'upload', {
         tenantId,
         category: selectedCategory,
         fileName: file.name,
@@ -49,7 +49,8 @@ const UploadForm = ({ apiUrl, tenantId, onUploadComplete }) => {
       }
     } catch (error) {
       console.error('Upload failed', error);
-      setMessage('Upload failed. Check console for details.');
+      const apiMessage = error.response?.data?.error || error.message || 'Unknown error';
+      setMessage(`Upload failed: ${apiMessage}`);
     } finally {
       setUploading(false);
     }

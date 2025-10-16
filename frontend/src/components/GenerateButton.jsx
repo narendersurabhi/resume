@@ -1,33 +1,64 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import { apiPost } from '../lib/api.js';
 
-const GenerateButton = ({ apiUrl, tenantId, selections, onGenerated }) => {
+const DEFAULT_MODEL = 'gpt-4o-mini';
+
+const GenerateButton = ({
+  apiUrl,
+  tenantId,
+  selections,
+  resumeText,
+  jobDescription,
+  userId,
+  onGenerated,
+  onAfterGenerate,
+}) => {
   const [isGenerating, setGenerating] = useState(false);
   const [error, setError] = useState(null);
+  const [message, setMessage] = useState(null);
 
   const handleGenerate = async () => {
-    if (!selections.resume || !selections.template) {
-      setError('Select both an approved resume and a template.');
+    if (!resumeText || !resumeText.trim()) {
+      setError('Paste resume text before generating.');
+      setMessage(null);
+      return;
+    }
+    if (!jobDescription || !jobDescription.trim()) {
+      setError('Provide a job description before generating.');
+      setMessage(null);
       return;
     }
 
     setGenerating(true);
     setError(null);
+    setMessage(null);
 
     try {
-      const response = await axios.post(`${apiUrl}generate`, {
-        tenantId,
-        resumeKey: selections.resume.key,
-        templateKey: selections.template.key,
-        jobDescriptionKey: selections.job?.key,
-        jobDescription: selections.job?.content,
-      });
+      const payload = {
+        userId: userId || tenantId || 'anonymous',
+        resumeText: resumeText.trim(),
+        jobDescription: jobDescription.trim(),
+        provider: selections?.provider || 'openai',
+        model: selections?.model || DEFAULT_MODEL,
+      };
+
+      if (selections?.job?.jobId) {
+        payload.jobId = selections.job.jobId;
+      }
+
+      const response = await apiPost(apiUrl, 'tailor', payload);
       if (onGenerated) {
         onGenerated(response.data);
       }
+      if (onAfterGenerate) {
+        onAfterGenerate();
+      }
+      setMessage(`Tailor request submitted (job ${response.data?.jobId ?? 'unknown'})`);
     } catch (err) {
       console.error('Generation failed', err);
-      setError('Failed to generate resume. Check console for details.');
+      const apiMessage = err.response?.data?.error || err.message || 'Unknown error';
+      setError(`Failed to generate resume: ${apiMessage}`);
+      setMessage(null);
     } finally {
       setGenerating(false);
     }
@@ -44,6 +75,7 @@ const GenerateButton = ({ apiUrl, tenantId, selections, onGenerated }) => {
         {isGenerating ? 'Generating…' : 'Generate Tailored Resume'}
       </button>
       {error && <p className="mt-3 text-sm text-rose-400">{error}</p>}
+      {message && <p className="mt-3 text-sm text-emerald-400">{message}</p>}
     </div>
   );
 };

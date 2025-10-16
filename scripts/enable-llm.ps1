@@ -31,21 +31,28 @@ try {
         Write-Warning "OPENAI_API_KEY not provided and not found in environment. Set -OpenAiKey or env:OPENAI_API_KEY."
     }
 
-    $vars = aws lambda get-function-configuration `
+    $rawVars = aws lambda get-function-configuration `
         --function-name $TailorFn `
         --query 'Environment.Variables' `
         --output json `
         --profile $Profile `
         --region $Region | ConvertFrom-Json
 
-    if (-not $vars) { $vars = @{} }
-    $vars.ENABLE_LLM = 'true'
-    if ($OpenAiKey) { $vars.OPENAI_API_KEY = $OpenAiKey }
+    $vars = @{}
+    if ($rawVars) {
+        foreach ($prop in $rawVars.PSObject.Properties) {
+            $vars[$prop.Name] = $prop.Value
+        }
+    }
+    $vars['ENABLE_LLM'] = 'true'
+    if ($OpenAiKey) { $vars['OPENAI_API_KEY'] = $OpenAiKey }
 
-    $json = $vars | ConvertTo-Json -Compress
+    $envDoc = @{ Variables = $vars } | ConvertTo-Json -Compress
+    $envFile = New-TemporaryFile
+    Set-Content -LiteralPath $envFile -Value $envDoc -Encoding Ascii
     aws lambda update-function-configuration `
         --function-name $TailorFn `
-        --environment "{\"Variables\":$json}" `
+        --environment file://$envFile `
         --profile $Profile `
         --region $Region | Out-Null
     Write-Host "Updated Lambda env: ENABLE_LLM=true, OPENAI_API_KEY (set: $([bool]$OpenAiKey))" -ForegroundColor Green

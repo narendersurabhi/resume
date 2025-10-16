@@ -2,10 +2,12 @@
 import os
 import uuid
 import time
+import logging
 from typing import Any, Dict, Optional, Tuple, List
 
 import boto3
 import urllib.request
+import urllib.error
 from boto3.dynamodb.conditions import Attr
 
 
@@ -24,6 +26,9 @@ dynamodb = boto3.resource("dynamodb")
 secrets = boto3.client("secretsmanager")
 bedrock = boto3.client("bedrock-runtime", region_name=BEDROCK_REGION)
 table = dynamodb.Table(TABLE_NAME) if TABLE_NAME else None
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 def _json_response(status: int, body: Dict[str, Any]):
@@ -90,6 +95,9 @@ def _get_openai_key() -> str:
 
 def _call_openai(model: str, resume_text: str, job_desc: str) -> Dict[str, Any]:
     key = _get_openai_key()
+    if not key:
+        raise RuntimeError("OPENAI_API_KEY not configured")
+
     url = "https://api.openai.com/v1/responses"
     payload = {
         "model": model,
@@ -97,24 +105,50 @@ def _call_openai(model: str, resume_text: str, job_desc: str) -> Dict[str, Any]:
             {"role": "system", "content": _system_prompt()},
             {"role": "user", "content": _user_prompt(resume_text, job_desc)},
         ],
-        "response_format": {"type": "json_object"},
         "temperature": 0.4,
     }
+
     req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"))
     req.add_header("Content-Type", "application/json")
     req.add_header("Authorization", f"Bearer {key}")
-    with urllib.request.urlopen(req, timeout=30) as resp:
-        data = json.loads(resp.read().decode("utf-8"))
-    # Extract unified text (Responses API)
-    # Prefer `output_text` if present (SDK helper); here we reconstruct
+
+    try:
+        with urllib.request.urlopen(req, timeout=45) as resp:
+            raw = resp.read().decode("utf-8")
+    except urllib.error.HTTPError as err:
+        detail = err.read().decode("utf-8", "ignore")
+        logger.error("OpenAI HTTPError %s: %s", err.code, detail)
+        raise RuntimeError(f"OpenAI error {err.code}: {detail}") from err
+    except urllib.error.URLError as err:
+        logger.error("OpenAI URLError: %s", err)
+        raise RuntimeError(f"OpenAI connection error: {err}") from err
+
+    data = json.loads(raw)
+    logger.debug("OpenAI raw response: %s", raw)
+
     text = ""
-    for out in data.get("output", []):
-        for c in out.get("content", []):
-            if c.get("type") == "output_text" or c.get("type") == "text":
-                text += c.get("text", "")
+    for out in data.get("output", []) or []:
+        for content in out.get("content", []) or []:
+            if content.get("type") in ("output_text", "text"):
+                text += content.get("text", "")
+
     if not text and "output_text" in data:
         text = data.get("output_text", "")
-    return json.loads(text or "{}")
+
+    if not text and data.get("response"):
+        for content in data["response"].get("content", []) or []:
+            if content.get("type") in ("output_text", "text"):
+                text += content.get("text", "")
+
+    if not text:
+        logger.warning("OpenAI response lacked textual content; returning empty object")
+        return {}
+
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError as err:
+        logger.error("Failed to decode OpenAI JSON: %s | text=%s", err, text)
+        raise RuntimeError(f"OpenAI response was not valid JSON: {err}") from err
 
 
 def _call_bedrock(model: str, resume_text: str, job_desc: str) -> Dict[str, Any]:

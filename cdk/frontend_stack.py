@@ -207,9 +207,14 @@ def handler(event, context):
                 },
                 physical_resource_id=cr.PhysicalResourceId.of(f"WriteConfigJson-{timestamp}"),
             ),
-            policy=cr.AwsCustomResourcePolicy.from_sdk_calls(
-                resources=cr.AwsCustomResourcePolicy.ANY_RESOURCE  # keep simple
-            ),
+            # Grant the custom resource just enough rights to invoke the
+            # in-stack ConfigWriter Lambda (identity-based permission).
+            policy=cr.AwsCustomResourcePolicy.from_statements([
+                iam.PolicyStatement(
+                    actions=["lambda:InvokeFunction"],
+                    resources=[config_writer.function_arn],
+                )
+            ]),
             install_latest_aws_sdk=False,
         )
 
