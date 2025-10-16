@@ -148,8 +148,10 @@ def _list_openai_models() -> List[str]:
     if not key:
         raise RuntimeError("OPENAI_API_KEY not configured")
     req.add_header("Authorization", f"Bearer {key}")
+    proj_set = False
     if OPENAI_PROJECT and OPENAI_PROJECT.startswith("proj_"):
         req.add_header("OpenAI-Project", OPENAI_PROJECT)
+        proj_set = True
     try:
         with urllib.request.urlopen(req, timeout=20) as resp:
             raw = resp.read().decode("utf-8")
@@ -159,6 +161,7 @@ def _list_openai_models() -> List[str]:
         raise RuntimeError(f"OpenAI error {err.code}: {detail}") from err
     data = json.loads(raw)
     models = [m.get("id") for m in (data.get("data") or []) if isinstance(m, dict) and m.get("id")]
+    logger.info("OpenAI /models project_set=%s count=%d", proj_set, len(models))
     # Optional filter: if ALLOWED_OPENAI has explicit values (not *), intersect
     if "*" not in ALLOWED_OPENAI and len(ALLOWED_OPENAI) > 0:
         models = [m for m in models if m in ALLOWED_OPENAI]
@@ -184,8 +187,11 @@ def _call_openai(model: str, resume_text: str, job_desc: str) -> Dict[str, Any]:
         raise RuntimeError("OPENAI_API_KEY not configured")
     req.add_header("Authorization", f"Bearer {key}")
     req.add_header("Content-Type", "application/json")
+    proj_set = False
     if OPENAI_PROJECT and OPENAI_PROJECT.startswith("proj_"):
         req.add_header("OpenAI-Project", OPENAI_PROJECT)
+        proj_set = True
+    logger.info("OpenAI /responses model=%s project_set=%s", model, proj_set)
 
     try:
         with urllib.request.urlopen(req, timeout=45) as resp:
