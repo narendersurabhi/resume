@@ -325,6 +325,14 @@ class BackendStack(Stack):
             authorization_type=apigateway.AuthorizationType.COGNITO,
         )
 
+        # Models listing (provider-aware)
+        api.root.add_resource("models").add_method(
+            "GET",
+            apigateway.LambdaIntegration(tailor_fn),
+            authorizer=authorizer,
+            authorization_type=apigateway.AuthorizationType.COGNITO,
+        )
+
         # Jobs list and status
         jobs_root = api.root.add_resource("jobs")
         jobs_root.add_method(
