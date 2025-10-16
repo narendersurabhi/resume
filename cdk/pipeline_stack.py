@@ -42,7 +42,7 @@ class PipelineStack(Stack):
             self,
             "RepositoryBranch",
             type="String",
-            default="main",
+            default="feature/openai",
             description="Git branch that should trigger the pipeline when updated.",
         )
 
