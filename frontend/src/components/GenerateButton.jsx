@@ -2,6 +2,10 @@ import React, { useState } from 'react';
 import { apiPost } from '../lib/api.js';
 
 const DEFAULT_MODEL = 'gpt-4o-mini';
+const PROVIDERS = [
+  { label: 'OpenAI', value: 'openai', models: ['gpt-4o-mini', 'gpt-4o'] },
+  { label: 'Bedrock', value: 'bedrock', models: ['anthropic.claude-3-5-sonnet-2024-06-20'] },
+];
 
 const GenerateButton = ({
   apiUrl,
@@ -16,6 +20,9 @@ const GenerateButton = ({
   const [isGenerating, setGenerating] = useState(false);
   const [error, setError] = useState(null);
   const [message, setMessage] = useState(null);
+  const [provider, setProvider] = useState('openai');
+  const [model, setModel] = useState(DEFAULT_MODEL);
+  const [autoRender, setAutoRender] = useState(true);
 
   const handleGenerate = async () => {
     const hasResumeSelection = Boolean(selections?.resume?.key);
@@ -52,29 +59,32 @@ const GenerateButton = ({
     try {
       if (canUseUploadedFiles) {
         const payload = {
-          tenantId,
+          userId: userId || tenantId || 'anonymous',
+          provider,
+          model,
           resumeKey: selections.resume.key,
-          templateKey: selections.template.key,
         };
+        if (hasJobSelection) payload.jobKey = selections.job.key;
+        if (trimmedJobDescription) payload.jobDescription = trimmedJobDescription;
 
-        if (hasJobSelection) {
-          payload.jobKey = selections.job.key;
-        }
-        if (trimmedJobDescription) {
-          payload.jobDescription = trimmedJobDescription;
-        }
+        const response = await apiPost(apiUrl, 'tailor', payload);
+        if (onGenerated) onGenerated({ ...response.data, source: 'tailor' });
+        setMessage(`Tailor request submitted (job ${response.data?.jobId ?? 'unknown'})`);
 
-        const response = await apiPost(apiUrl, 'generate', payload);
-        if (onGenerated) {
-          onGenerated({
-            ...response.data,
-            source: 'generate',
-          });
+        if (autoRender && selections?.template?.key) {
+          try {
+            await apiPost(apiUrl, 'render', {
+              jobId: response.data?.jobId,
+              userId: userId || tenantId || 'anonymous',
+              jsonS3: response.data?.jsonS3,
+              templateId: 'default',
+              format: 'docx',
+            });
+          } catch (e) {
+            console.error('Auto-render failed', e);
+          }
         }
-        if (onAfterGenerate) {
-          onAfterGenerate();
-        }
-        setMessage(`Document generation started (output ${response.data?.outputId ?? 'pending'}).`);
+        if (onAfterGenerate) onAfterGenerate();
         return;
       }
 
@@ -82,21 +92,14 @@ const GenerateButton = ({
         userId: userId || tenantId || 'anonymous',
         resumeText: trimmedResumeText,
         jobDescription: trimmedJobDescription,
-        provider: selections?.provider || 'openai',
-        model: selections?.model || DEFAULT_MODEL,
+        provider,
+        model,
       };
-
-      if (selections?.job?.jobId) {
-        payload.jobId = selections.job.jobId;
-      }
+      if (selections?.job?.jobId) payload.jobId = selections.job.jobId;
 
       const response = await apiPost(apiUrl, 'tailor', payload);
-      if (onGenerated) {
-        onGenerated(response.data);
-      }
-      if (onAfterGenerate) {
-        onAfterGenerate();
-      }
+      if (onGenerated) onGenerated(response.data);
+      if (onAfterGenerate) onAfterGenerate();
       setMessage(`Tailor request submitted (job ${response.data?.jobId ?? 'unknown'})`);
     } catch (err) {
       console.error('Generation failed', err);
@@ -109,7 +112,42 @@ const GenerateButton = ({
   };
 
   return (
-    <div className="rounded-lg bg-slate-900 p-6 shadow">
+    <div className="space-y-4 rounded-lg bg-slate-900 p-6 shadow">
+      <div className="grid grid-cols-2 gap-3 text-sm">
+        <div>
+          <label className="block text-slate-300">Provider</label>
+          <select
+            value={provider}
+            onChange={(e) => {
+              const p = e.target.value;
+              setProvider(p);
+              const found = PROVIDERS.find((x) => x.value === p);
+              if (found && found.models?.length) setModel(found.models[0]);
+            }}
+            className="mt-1 w-full rounded border border-slate-700 bg-slate-800 p-2 text-slate-100"
+          >
+            {PROVIDERS.map((p) => (
+              <option key={p.value} value={p.value}>{p.label}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="block text-slate-300">Model</label>
+          <select
+            value={model}
+            onChange={(e) => setModel(e.target.value)}
+            className="mt-1 w-full rounded border border-slate-700 bg-slate-800 p-2 text-slate-100"
+          >
+            {(PROVIDERS.find((x) => x.value === provider)?.models || [model]).map((m) => (
+              <option key={m} value={m}>{m}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+      <label className="flex items-center gap-2 text-xs text-slate-300">
+        <input type="checkbox" checked={autoRender} onChange={(e) => setAutoRender(e.target.checked)} />
+        Auto-render to DOCX after tailoring
+      </label>
       <button
         type="button"
         onClick={handleGenerate}

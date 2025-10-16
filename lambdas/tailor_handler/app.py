@@ -9,10 +9,14 @@ import boto3
 import urllib.request
 import urllib.error
 from boto3.dynamodb.conditions import Attr
+import io
+import zipfile
+from xml.etree import ElementTree as ET
 
 
 S3_BUCKET = os.getenv("JOBS_BUCKET", "")
 TABLE_NAME = os.getenv("JOBS_TABLE", "")
+STORAGE_BUCKET = os.getenv("STORAGE_BUCKET", "")
 DEFAULT_PROVIDER = os.getenv("MODEL_PROVIDER", "openai")
 DEFAULT_MODEL = os.getenv("MODEL_ID", "gpt-4o-mini")
 OPENAI_SECRET_NAME = os.getenv("OPENAI_SECRET_NAME", "openai/api-key")
@@ -45,6 +49,24 @@ def _json_response(status: int, body: Dict[str, Any]):
         "headers": _base_headers,
         "body": json.dumps(body),
     }
+
+
+def _docx_bytes_to_text(blob: bytes) -> str:
+    try:
+        with zipfile.ZipFile(io.BytesIO(blob)) as z:
+            xml = z.read("word/document.xml")
+    except Exception:
+        return ""
+    try:
+        ns = {"w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"}
+        root = ET.fromstring(xml)
+        texts: List[str] = []
+        for t in root.findall('.//w:t', ns):
+            if t.text:
+                texts.append(t.text)
+        return " ".join(texts).strip()
+    except Exception:
+        return ""
 
 
 def _presign(bucket: str, key: str, expires: int = 900) -> str:
@@ -288,6 +310,8 @@ def handler(event, context):
         # Inputs
         resume_text = (body.get("resumeText") or "").strip()
         job_desc = (body.get("jobDescription") or "").strip()
+        resume_key = (body.get("resumeKey") or "").strip()
+        job_key = (body.get("jobKey") or "").strip()
         resume_s3 = body.get("resumeS3")
         jd_s3 = body.get("jobDescS3")
         user_id = (body.get("userId") or "anonymous").strip() or "anonymous"
@@ -304,12 +328,40 @@ def handler(event, context):
         inputs_prefix = f"{base_prefix}/inputs"
         outputs_prefix = f"{base_prefix}/outputs"
 
-        if resume_text:
+        # Resolve resume text: prefer resumeKey (DOCX in storage), else inline text
+        if resume_key:
+            if not STORAGE_BUCKET:
+                return _json_response(400, {"ok": False, "error": "Storage bucket not configured for resumeKey"})
+            try:
+                blob = s3.get_object(Bucket=STORAGE_BUCKET, Key=resume_key)["Body"].read()
+                resume_text = _docx_bytes_to_text(blob)
+                s3.put_object(Bucket=S3_BUCKET, Key=f"{inputs_prefix}/reference-resume.txt", Body=resume_text.encode("utf-8"))
+                resume_s3 = {"bucket": S3_BUCKET, "key": f"{inputs_prefix}/reference-resume.txt"}
+            except Exception as e:
+                return _json_response(400, {"ok": False, "error": f"Failed to read resumeKey: {str(e)}"})
+        elif resume_text:
             s3.put_object(Bucket=S3_BUCKET, Key=f"{inputs_prefix}/reference-resume.txt", Body=resume_text.encode("utf-8"))
             resume_s3 = {"bucket": S3_BUCKET, "key": f"{inputs_prefix}/reference-resume.txt"}
-        if job_desc:
+
+        # Resolve job description: prefer jobKey (DOCX in storage), else inline text
+        if job_key:
+            if not STORAGE_BUCKET:
+                return _json_response(400, {"ok": False, "error": "Storage bucket not configured for jobKey"})
+            try:
+                blob = s3.get_object(Bucket=STORAGE_BUCKET, Key=job_key)["Body"].read()
+                job_desc = _docx_bytes_to_text(blob)
+                s3.put_object(Bucket=S3_BUCKET, Key=f"{inputs_prefix}/jd.txt", Body=job_desc.encode("utf-8"))
+                jd_s3 = {"bucket": S3_BUCKET, "key": f"{inputs_prefix}/jd.txt"}
+            except Exception as e:
+                return _json_response(400, {"ok": False, "error": f"Failed to read jobKey: {str(e)}"})
+        elif job_desc:
             s3.put_object(Bucket=S3_BUCKET, Key=f"{inputs_prefix}/jd.txt", Body=job_desc.encode("utf-8"))
             jd_s3 = {"bucket": S3_BUCKET, "key": f"{inputs_prefix}/jd.txt"}
+
+        if not resume_text:
+            return _json_response(400, {"ok": False, "error": "Resume not provided (resumeKey or resumeText required)"})
+        if not job_desc:
+            return _json_response(400, {"ok": False, "error": "Job description not provided (jobKey or jobDescription required)"})
 
         # Generate normalized JSON via selected provider (or fallback to stub)
         if ENABLE_LLM and (resume_text or job_desc):

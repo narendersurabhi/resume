@@ -244,6 +244,7 @@ class BackendStack(Stack):
                 "JOBS_TABLE": jobs_table.table_name,
                 "MODEL_PROVIDER": "openai",
                 "MODEL_ID": "gpt-4o-mini",
+                "STORAGE_BUCKET": bucket.bucket_name,
             },
             memory_size=512,
             timeout=Duration.seconds(30),
@@ -293,6 +294,8 @@ class BackendStack(Stack):
         jobs_bucket.grant_read_write(render_fn)
         jobs_table.grant_read_write_data(tailor_fn)
         jobs_table.grant_read_write_data(render_fn)
+        # Allow tailor to read uploaded resumes/templates from the primary storage bucket
+        bucket.grant_read(tailor_fn)
 
         # API routes for tailoring and rendering
         # Cognito authorizer using exported User Pool from AuthStack
