@@ -1,5 +1,5 @@
 Param(
-    [string]$Owner = "userprofiles",
+    [string]$Owner = "narendersurabhi",
     [string]$Repo = "resume",
     [string]$Branch = "feature/openai",
     [string]$ConnectionName = "resume-github-connection",

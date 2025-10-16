@@ -26,7 +26,7 @@ class PipelineStack(Stack):
             self,
             "RepositoryOwner",
             type="String",
-            default="userprofiles",
+            default="narendersurabhi",
             description="GitHub organization or user that owns the source repository.",
         )
 
@@ -232,7 +232,7 @@ class PipelineStack(Stack):
                 "GENERATE_REPO": codebuild.BuildEnvironmentVariable(value=generate_repo.repository_name),
                 "UPLOAD_REPO": codebuild.BuildEnvironmentVariable(value=upload_repo.repository_name),
                 "RENDERER_REPO": codebuild.BuildEnvironmentVariable(value=renderer_repo.repository_name),
-                "DEPLOY_APP": codebuild.BuildEnvironmentVariable(value="false"),
+                "DEPLOY_APP": codebuild.BuildEnvironmentVariable(value="true"),
             },
         )
 

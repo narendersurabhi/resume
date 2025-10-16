@@ -30,11 +30,19 @@ table = dynamodb.Table(TABLE_NAME) if TABLE_NAME else None
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+_frontend_origin = (os.getenv("FRONTEND_ORIGIN") or "").strip() or "*"
+_base_headers = {
+    "content-type": "application/json",
+    "Access-Control-Allow-Origin": "*" if _frontend_origin == "*" else _frontend_origin,
+    "Access-Control-Allow-Headers": "*",
+    "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+}
+
 
 def _json_response(status: int, body: Dict[str, Any]):
     return {
         "statusCode": status,
-        "headers": {"content-type": "application/json"},
+        "headers": _base_headers,
         "body": json.dumps(body),
     }
 
