@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Amplify } from 'aws-amplify';
-import { fetchAuthSession } from 'aws-amplify/auth';
-import { Authenticator } from '@aws-amplify/ui-react';
+import { fetchAuthSession, signOut as amplifySignOut } from 'aws-amplify/auth';
+import { Authenticator, useAuthenticator } from '@aws-amplify/ui-react';
 import '@aws-amplify/ui-react/styles.css';
 import Dashboard from './pages/Dashboard.jsx';
 
@@ -72,8 +72,16 @@ const App = ({ initialConfig }) => {
     );
   }
 
+  const authComponents = useMemo(
+    () => ({
+      SignIn: { Footer: AuthSessionReset },
+      SignUp: { Footer: AuthSessionReset },
+    }),
+    [],
+  );
+
   return (
-    <Authenticator loginMechanisms={['email']} variation="modal">
+    <Authenticator loginMechanisms={['email']} variation="modal" components={authComponents}>
       {({ signOut, user }) => (
         <SignedInShell config={config} user={user} signOut={signOut} />
       )}
@@ -82,6 +90,71 @@ const App = ({ initialConfig }) => {
 };
 
 export default App;
+
+const AuthSessionReset = () => {
+  const { error } = useAuthenticator((context) => [context.error]);
+  const [clearing, setClearing] = useState(false);
+  const [cleared, setCleared] = useState(false);
+  const attemptedRef = useRef(false);
+
+  const errorMessage =
+    typeof error === 'string' ? error : error?.message || '';
+
+  useEffect(() => {
+    if (
+      errorMessage &&
+      errorMessage.toLowerCase().includes('already a signed in user') &&
+      !attemptedRef.current
+    ) {
+      attemptedRef.current = true;
+      void amplifySignOut({ global: true }).catch((err) => {
+        console.error('Automatic session reset failed', err);
+      });
+    }
+  }, [errorMessage]);
+
+  const handleReset = async () => {
+    setClearing(true);
+    try {
+      await amplifySignOut({ global: true });
+      if (typeof window !== 'undefined') {
+        try {
+          window.localStorage?.removeItem('amplify-signin-with-hostedUI');
+          window.localStorage?.removeItem('amplify-authenticator-cache');
+          window.sessionStorage?.removeItem('amplify-authenticator-cache');
+        } catch (storageErr) {
+          console.warn('Failed to clear local storage cache', storageErr);
+        }
+      }
+      setCleared(true);
+    } catch (err) {
+      console.error('Manual session reset failed', err);
+    } finally {
+      setClearing(false);
+    }
+  };
+
+  return (
+    <div className="mt-6 space-y-2 text-xs text-slate-400">
+      {errorMessage ? (
+        <p className="text-rose-400">{errorMessage}</p>
+      ) : (
+        <p>Recurring sign-in issues? Clear the cached session.</p>
+      )}
+      <button
+        type="button"
+        onClick={handleReset}
+        disabled={clearing}
+        className="w-full rounded border border-slate-600 bg-slate-900 px-3 py-2 font-semibold text-slate-200 transition hover:bg-slate-800 disabled:opacity-60"
+      >
+        {clearing ? 'Clearing session…' : 'Reset cached session'}
+      </button>
+      {cleared && (
+        <p className="text-emerald-400">Session cleared. Please try signing in again.</p>
+      )}
+    </div>
+  );
+};
 
 const SignedInShell = ({ config, user, signOut }) => {
   const [sessionInfo, setSessionInfo] = useState({
