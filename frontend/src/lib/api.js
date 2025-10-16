@@ -5,8 +5,9 @@ const ensureAbsoluteUrl = (baseUrl, path) => {
   if (!baseUrl) {
     throw new Error('API base URL is not defined.');
   }
-  const normalizedPath = path?.startsWith('/') ? path : `/${path ?? ''}`;
-  return new URL(normalizedPath, baseUrl).toString();
+  const base = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
+  const normalizedPath = (path ?? '').replace(/^\/+/, '');
+  return new URL(normalizedPath, base).toString();
 };
 
 const buildHeaders = async (extraHeaders = {}) => {
