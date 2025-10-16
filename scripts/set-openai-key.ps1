@@ -32,32 +32,23 @@ try {
     }
     if (-not $plain -or $plain.Trim().Length -eq 0) { throw "OpenAI API key cannot be empty." }
 
-    $exists = $false
-    try {
-        aws secretsmanager describe-secret --secret-id $SecretName --profile $Profile --region $Region | Out-Null
-        $exists = $true
-    } catch {
-        $exists = $false
-    }
+    # Detect existence using exit code (aws CLI writes errors to stderr and does not throw PowerShell exceptions)
+    $null = aws secretsmanager describe-secret --secret-id $SecretName --profile $Profile --region $Region --output json 2>$null
+    $exists = ($LASTEXITCODE -eq 0)
 
     if ($exists) {
-        aws secretsmanager put-secret-value `
-            --secret-id $SecretName `
-            --secret-string $plain `
-            --profile $Profile `
-            --region $Region | Out-Null
+        $null = aws secretsmanager put-secret-value --secret-id $SecretName --secret-string $plain --profile $Profile --region $Region 2>$null
+        if ($LASTEXITCODE -ne 0) { throw "Failed to update secret '$SecretName'" }
         Write-Host "Updated existing secret: $SecretName" -ForegroundColor Green
     } else {
-        aws secretsmanager create-secret `
-            --name $SecretName `
-            --secret-string $plain `
-            --profile $Profile `
-            --region $Region | Out-Null
+        $null = aws secretsmanager create-secret --name $SecretName --secret-string $plain --profile $Profile --region $Region 2>$null
+        if ($LASTEXITCODE -ne 0) { throw "Failed to create secret '$SecretName'" }
         Write-Host "Created new secret: $SecretName" -ForegroundColor Green
     }
 
     # Verify
-    $arn = (aws secretsmanager describe-secret --secret-id $SecretName --profile $Profile --region $Region | ConvertFrom-Json).ARN
+    $arn = (aws secretsmanager describe-secret --secret-id $SecretName --profile $Profile --region $Region --output json 2>$null | ConvertFrom-Json).ARN
+    if (-not $arn) { throw "Verification failed: could not read ARN for '$SecretName'" }
     Write-Host "Secret ARN: $arn" -ForegroundColor Yellow
 }
 catch {
