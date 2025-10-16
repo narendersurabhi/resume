@@ -252,6 +252,16 @@ class BackendStack(Stack):
             log_retention=logs.RetentionDays.ONE_WEEK,
         )
 
+        # Allow Tailor to read the OpenAI API key from Secrets Manager when stored at name 'openai/api-key'
+        tailor_fn.add_to_role_policy(
+            iam.PolicyStatement(
+                actions=["secretsmanager:GetSecretValue"],
+                resources=[
+                    f"arn:aws:secretsmanager:{self.region}:{self.account}:secret:openai/api-key-*",
+                ],
+            )
+        )
+
         # Templates bucket for DOCX templates
         templates_bucket = s3.Bucket(
             self,
