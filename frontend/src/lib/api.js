@@ -13,7 +13,8 @@ const ensureAbsoluteUrl = (baseUrl, path) => {
 const buildHeaders = async (extraHeaders = {}) => {
   const session = await fetchAuthSession();
   const token = session?.tokens?.idToken?.toString();
-  return token ? { Authorization: token, ...extraHeaders } : { ...extraHeaders };
+  const authHeader = token ? { Authorization: `Bearer ${token}` } : {};
+  return { ...authHeader, ...extraHeaders };
 };
 
 export const apiPost = async (baseUrl, path, data, options = {}) => {

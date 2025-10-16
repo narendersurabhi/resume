@@ -18,15 +18,31 @@ const GenerateButton = ({
   const [message, setMessage] = useState(null);
 
   const handleGenerate = async () => {
-    if (!resumeText || !resumeText.trim()) {
-      setError('Paste resume text before generating.');
+    const hasResumeSelection = Boolean(selections?.resume?.key);
+    const hasTemplateSelection = Boolean(selections?.template?.key);
+    const hasJobSelection = Boolean(selections?.job?.key);
+    const trimmedResumeText = resumeText?.trim() ?? '';
+    const trimmedJobDescription = jobDescription?.trim() ?? '';
+
+    const canUseUploadedFiles = hasResumeSelection && hasTemplateSelection;
+
+    if (canUseUploadedFiles && !trimmedJobDescription && !hasJobSelection) {
+      setError('Provide a job description or select an uploaded job description before generating.');
       setMessage(null);
       return;
     }
-    if (!jobDescription || !jobDescription.trim()) {
-      setError('Provide a job description before generating.');
-      setMessage(null);
-      return;
+
+    if (!canUseUploadedFiles) {
+      if (!trimmedResumeText) {
+        setError('Paste resume text before generating.');
+        setMessage(null);
+        return;
+      }
+      if (!trimmedJobDescription) {
+        setError('Provide a job description before generating.');
+        setMessage(null);
+        return;
+      }
     }
 
     setGenerating(true);
@@ -34,10 +50,38 @@ const GenerateButton = ({
     setMessage(null);
 
     try {
+      if (canUseUploadedFiles) {
+        const payload = {
+          tenantId,
+          resumeKey: selections.resume.key,
+          templateKey: selections.template.key,
+        };
+
+        if (hasJobSelection) {
+          payload.jobKey = selections.job.key;
+        }
+        if (trimmedJobDescription) {
+          payload.jobDescription = trimmedJobDescription;
+        }
+
+        const response = await apiPost(apiUrl, 'generate', payload);
+        if (onGenerated) {
+          onGenerated({
+            ...response.data,
+            source: 'generate',
+          });
+        }
+        if (onAfterGenerate) {
+          onAfterGenerate();
+        }
+        setMessage(`Document generation started (output ${response.data?.outputId ?? 'pending'}).`);
+        return;
+      }
+
       const payload = {
         userId: userId || tenantId || 'anonymous',
-        resumeText: resumeText.trim(),
-        jobDescription: jobDescription.trim(),
+        resumeText: trimmedResumeText,
+        jobDescription: trimmedJobDescription,
         provider: selections?.provider || 'openai',
         model: selections?.model || DEFAULT_MODEL,
       };
