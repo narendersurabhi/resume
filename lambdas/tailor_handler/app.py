@@ -81,10 +81,10 @@ def _choose_provider(req_provider: Optional[str], req_model: Optional[str]) -> T
     provider = (req_provider or DEFAULT_PROVIDER).lower()
     model = (req_model or DEFAULT_MODEL)
     if provider == "openai":
-        if model not in ALLOWED_OPENAI:
+        if ("*" not in ALLOWED_OPENAI) and (model not in ALLOWED_OPENAI):
             raise ValueError("Unsupported OpenAI model")
     elif provider == "bedrock":
-        if model not in ALLOWED_BEDROCK:
+        if ("*" not in ALLOWED_BEDROCK) and (model not in ALLOWED_BEDROCK):
             raise ValueError("Unsupported Bedrock model")
     else:
         raise ValueError("Unsupported provider")
@@ -121,6 +121,29 @@ def _get_openai_key() -> str:
             return s
     except Exception:
         return os.getenv("OPENAI_API_KEY", "")
+
+
+def _list_openai_models() -> List[str]:
+    key = _get_openai_key()
+    if not key:
+        raise RuntimeError("OPENAI_API_KEY not configured")
+    url = "https://api.openai.com/v1/models"
+    req = urllib.request.Request(url)
+    req.add_header("Authorization", f"Bearer {key}")
+    try:
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            raw = resp.read().decode("utf-8")
+    except urllib.error.HTTPError as err:
+        detail = err.read().decode("utf-8", "ignore")
+        logger.error("OpenAI list models HTTPError %s: %s", err.code, detail)
+        raise RuntimeError(f"OpenAI error {err.code}: {detail}") from err
+    data = json.loads(raw)
+    models = [m.get("id") for m in (data.get("data") or []) if isinstance(m, dict) and m.get("id")]
+    # Optional filter: if ALLOWED_OPENAI has explicit values (not *), intersect
+    if "*" not in ALLOWED_OPENAI and len(ALLOWED_OPENAI) > 0:
+        models = [m for m in models if m in ALLOWED_OPENAI]
+    # Deduplicate and sort
+    return sorted(set(models))
 
 
 def _call_openai(model: str, resume_text: str, job_desc: str) -> Dict[str, Any]:
@@ -248,6 +271,23 @@ def handler(event, context):
         path = event.get("path") or ""
         qs = event.get("queryStringParameters") or {}
         headers = {k.lower(): v for k, v in (event.get("headers") or {}).items()}
+
+        # GET /models?provider=openai|bedrock -> list available models
+        if http_method == "GET" and path.endswith("/models"):
+            prov = (qs.get("provider") or "").lower()
+            try:
+                if prov == "openai":
+                    return _json_response(200, {"ok": True, "provider": prov, "models": _list_openai_models()})
+                elif prov == "bedrock":
+                    models = sorted(ALLOWED_BEDROCK) if ALLOWED_BEDROCK else []
+                    if "*" in ALLOWED_BEDROCK:
+                        # Best-effort: return a common set if wildcard; listing via Bedrock control plane is not wired here
+                        models = ["anthropic.claude-3-5-sonnet-2024-06-20", "anthropic.claude-3-5-haiku-2024-06-20"]
+                    return _json_response(200, {"ok": True, "provider": prov, "models": models})
+                else:
+                    return _json_response(400, {"ok": False, "error": "Unknown provider"})
+            except Exception as e:
+                return _json_response(400, {"ok": False, "error": str(e)})
 
         # GET /jobs -> list jobs for user
         if http_method == "GET" and path.endswith("/jobs") and table is not None:

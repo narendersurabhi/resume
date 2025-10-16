@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
-import { apiPost } from '../lib/api.js';
+import React, { useEffect, useState } from 'react';
+import { apiGet, apiPost } from '../lib/api.js';
 
 const DEFAULT_MODEL = 'gpt-4o-mini';
 const PROVIDERS = [
-  { label: 'OpenAI', value: 'openai', models: ['gpt-4o-mini', 'gpt-4o'] },
-  { label: 'Bedrock', value: 'bedrock', models: ['anthropic.claude-3-5-sonnet-2024-06-20'] },
+  { label: 'OpenAI', value: 'openai' },
+  { label: 'Bedrock', value: 'bedrock' },
 ];
 
 const GenerateButton = ({
@@ -23,6 +23,28 @@ const GenerateButton = ({
   const [provider, setProvider] = useState('openai');
   const [model, setModel] = useState(DEFAULT_MODEL);
   const [autoRender, setAutoRender] = useState(true);
+  const [modelOptions, setModelOptions] = useState([DEFAULT_MODEL]);
+
+  const loadModels = async (prov) => {
+    try {
+      const res = await apiGet(apiUrl, 'models', { params: { provider: prov } });
+      const list = res.data?.models || [];
+      if (Array.isArray(list) && list.length > 0) {
+        setModelOptions(list);
+        if (!list.includes(model)) setModel(list[0]);
+      } else {
+        setModelOptions([model]);
+      }
+    } catch (e) {
+      // leave current options; show no UI error to avoid blocking generate
+      setModelOptions([model]);
+    }
+  };
+
+  useEffect(() => {
+    loadModels(provider);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [provider]);
 
   const handleGenerate = async () => {
     const hasResumeSelection = Boolean(selections?.resume?.key);
@@ -138,7 +160,7 @@ const GenerateButton = ({
             onChange={(e) => setModel(e.target.value)}
             className="mt-1 w-full rounded border border-slate-700 bg-slate-800 p-2 text-slate-100"
           >
-            {(PROVIDERS.find((x) => x.value === provider)?.models || [model]).map((m) => (
+            {modelOptions.map((m) => (
               <option key={m} value={m}>{m}</option>
             ))}
           </select>
