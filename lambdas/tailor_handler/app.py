@@ -45,10 +45,38 @@ _base_headers = {
 
 
 def _json_response(status: int, body: Dict[str, Any]):
+    # Handle DynamoDB Decimals gracefully
+    def _default(o):
+        try:
+            import decimal as _dec
+            if isinstance(o, _dec.Decimal):
+                return int(o) if o % 1 == 0 else float(o)
+        except Exception:
+            pass
+        return str(o)
+
+    try:
+        payload = json.dumps(body, default=_default)
+    except TypeError:
+        # Fallback: convert nested structures
+        def _convert(x):
+            try:
+                import decimal as _dec
+                if isinstance(x, dict):
+                    return {k: _convert(v) for k, v in x.items()}
+                if isinstance(x, list):
+                    return [_convert(v) for v in x]
+                if isinstance(x, _dec.Decimal):
+                    return int(x) if x % 1 == 0 else float(x)
+            except Exception:
+                pass
+            return x
+        payload = json.dumps(_convert(body))
+
     return {
         "statusCode": status,
         "headers": _base_headers,
-        "body": json.dumps(body),
+        "body": payload,
     }
 
 
