@@ -21,7 +21,7 @@ DEFAULT_PROVIDER = os.getenv("MODEL_PROVIDER", "openai")
 DEFAULT_MODEL = os.getenv("MODEL_ID", "gpt-4o-mini")
 OPENAI_SECRET_NAME = os.getenv("OPENAI_SECRET_NAME", "openai/api-key")
 ENABLE_LLM = os.getenv("ENABLE_LLM", "false").lower() in ("1", "true", "yes")
-ALLOWED_OPENAI = set((os.getenv("ALLOWED_OPENAI_MODELS", "gpt-4o-mini,gpt-4o,o4-mini").split(",")))
+ALLOWED_OPENAI = set((os.getenv("ALLOWED_OPENAI_MODELS", "*").split(",")))
 ALLOWED_BEDROCK = set((os.getenv("ALLOWED_BEDROCK_MODELS", "anthropic.claude-3-5-sonnet-2024-06-20").split(",")))
 BEDROCK_REGION = os.getenv("BEDROCK_REGION", os.getenv("AWS_REGION", "us-east-1"))
 

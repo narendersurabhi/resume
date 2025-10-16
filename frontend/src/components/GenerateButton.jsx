@@ -28,7 +28,11 @@ const GenerateButton = ({
   const loadModels = async (prov) => {
     try {
       const res = await apiGet(apiUrl, 'models', { params: { provider: prov } });
-      const list = res.data?.models || [];
+      let list = res.data?.models || [];
+      if (prov === 'openai' && Array.isArray(list)) {
+        const gpt5 = list.filter((m) => typeof m === 'string' && m.toLowerCase().startsWith('gpt-5'));
+        if (gpt5.length > 0) list = gpt5;
+      }
       if (Array.isArray(list) && list.length > 0) {
         setModelOptions(list);
         if (!list.includes(model)) setModel(list[0]);
