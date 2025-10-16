@@ -152,6 +152,7 @@ class BackendStack(Stack):
         bucket.grant_read_write(upload_function)
         bucket.grant_read_write(generate_function)
         bucket.grant_read(download_function)
+        jobs_bucket.grant_read(download_function)
 
         table.grant_read_write_data(upload_function)
         table.grant_read_write_data(generate_function)
@@ -203,6 +204,8 @@ class BackendStack(Stack):
 
         api.root.add_resource("upload").add_method("POST", apigateway.LambdaIntegration(upload_function))
         api.root.add_resource("generate").add_method("POST", apigateway.LambdaIntegration(generate_function))
+        # Provide jobs bucket to download function for presigning job artifacts
+        download_function.add_environment("JOBS_BUCKET", jobs_bucket.bucket_name)
         api.root.add_resource("download").add_method("GET", apigateway.LambdaIntegration(download_function))
 
         self.api_url = api.url
