@@ -317,9 +317,9 @@ def handler(event, context):
             except Exception as e:
                 return _json_response(400, {"ok": False, "error": str(e)})
 
-        # GET /jobs -> list jobs for user
+        # GET /jobs -> list jobs for current user (default to token's sub)
         if http_method == "GET" and path.endswith("/jobs") and table is not None:
-            user_id_q = headers.get("x-user-id") or qs.get("userId") or "anonymous"
+            user_id_q = headers.get("x-user-id") or qs.get("userId") or claim_user or "anonymous"
             # simple scan with filter (ok for low volume)
             resp = table.scan(FilterExpression=Attr("userId").eq(user_id_q))
             return _json_response(200, {"ok": True, "items": resp.get("Items", [])})
@@ -349,7 +349,8 @@ def handler(event, context):
             base_json = body.get("resumeJson") or {}
             feedback = body.get("feedback") or {}
             job_id = body.get("jobId") or uuid.uuid4().hex
-            user_id = (body.get("userId") or claim_user or "anonymous").strip() or "anonymous"
+            # Always derive user_id from the authenticated token
+            user_id = (claim_user or "anonymous").strip() or "anonymous"
             prov, mdl = _choose_provider(body.get("provider"), body.get("model"))
             # In a simple scaffold, append feedback to summary or bullets; if LLM enabled, ask model to revise
             if ENABLE_LLM:
@@ -382,7 +383,8 @@ def handler(event, context):
         job_key = (body.get("jobKey") or "").strip()
         resume_s3 = body.get("resumeS3")
         jd_s3 = body.get("jobDescS3")
-        user_id = (body.get("userId") or "anonymous").strip() or "anonymous"
+        # Always derive user_id from the authenticated token
+        user_id = (claim_user or "anonymous").strip() or "anonymous"
         job_id = body.get("jobId") or uuid.uuid4().hex
         provider = (body.get("provider") or DEFAULT_PROVIDER).lower()
         model = body.get("model") or DEFAULT_MODEL
