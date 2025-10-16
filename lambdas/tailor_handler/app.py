@@ -20,6 +20,7 @@ STORAGE_BUCKET = os.getenv("STORAGE_BUCKET", "")
 DEFAULT_PROVIDER = os.getenv("MODEL_PROVIDER", "openai")
 DEFAULT_MODEL = os.getenv("MODEL_ID", "gpt-4o-mini")
 OPENAI_SECRET_NAME = os.getenv("OPENAI_SECRET_NAME", "openai/api-key")
+OPENAI_PROJECT = os.getenv("OPENAI_PROJECT", "").strip()
 ENABLE_LLM = os.getenv("ENABLE_LLM", "false").lower() in ("1", "true", "yes")
 ALLOWED_OPENAI = set((os.getenv("ALLOWED_OPENAI_MODELS", "*").split(",")))
 ALLOWED_BEDROCK = set((os.getenv("ALLOWED_BEDROCK_MODELS", "anthropic.claude-3-5-sonnet-2024-06-20").split(",")))
@@ -147,7 +148,7 @@ def _list_openai_models() -> List[str]:
     if not key:
         raise RuntimeError("OPENAI_API_KEY not configured")
     req.add_header("Authorization", f"Bearer {key}")
-    if OPENAI_PROJECT:
+    if OPENAI_PROJECT and OPENAI_PROJECT.startswith("proj_"):
         req.add_header("OpenAI-Project", OPENAI_PROJECT)
     try:
         with urllib.request.urlopen(req, timeout=20) as resp:
@@ -183,7 +184,7 @@ def _call_openai(model: str, resume_text: str, job_desc: str) -> Dict[str, Any]:
         raise RuntimeError("OPENAI_API_KEY not configured")
     req.add_header("Authorization", f"Bearer {key}")
     req.add_header("Content-Type", "application/json")
-    if OPENAI_PROJECT:
+    if OPENAI_PROJECT and OPENAI_PROJECT.startswith("proj_"):
         req.add_header("OpenAI-Project", OPENAI_PROJECT)
 
     try:
