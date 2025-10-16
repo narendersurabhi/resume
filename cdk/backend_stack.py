@@ -244,7 +244,6 @@ class BackendStack(Stack):
                 "JOBS_TABLE": jobs_table.table_name,
                 "MODEL_PROVIDER": "openai",
                 "MODEL_ID": "gpt-5-pro",
-                "OPENAI_PROJECT": "resume",
                 "STORAGE_BUCKET": bucket.bucket_name,
             },
             memory_size=512,
