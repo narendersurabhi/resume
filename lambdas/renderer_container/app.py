@@ -14,13 +14,23 @@ DDB = boto3.resource("dynamodb")
 JOBS_BUCKET = os.getenv("JOBS_BUCKET", "")
 JOBS_TABLE = os.getenv("JOBS_TABLE", "")
 TEMPLATES_BUCKET = os.getenv("TEMPLATES_BUCKET", "")
+FRONTEND_ORIGIN = (os.getenv("FRONTEND_ORIGIN") or "*").strip() or "*"
 STORAGE_BUCKET = os.getenv("STORAGE_BUCKET", "")
 
 TABLE = DDB.Table(JOBS_TABLE) if JOBS_TABLE else None
 
 
+def _base_headers() -> Dict[str, str]:
+    return {
+        "content-type": "application/json",
+        "Access-Control-Allow-Origin": FRONTEND_ORIGIN if FRONTEND_ORIGIN != "*" else "*",
+        "Access-Control-Allow-Headers": "*",
+        "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+    }
+
+
 def _json_response(status: int, body: Dict[str, Any]):
-    return {"statusCode": status, "headers": {"content-type": "application/json"}, "body": json.dumps(body)}
+    return {"statusCode": status, "headers": _base_headers(), "body": json.dumps(body)}
 
 
 def _load_schema() -> Dict[str, Any]:
@@ -41,6 +51,10 @@ def _download_s3(obj: Dict[str, str]) -> bytes:
 
 def handler(event, context):
     try:
+        # Preflight CORS
+        if (event.get("httpMethod") or "").upper() == "OPTIONS":
+            return {"statusCode": 204, "headers": _base_headers(), "body": ""}
+
         body_str = event.get("body") or "{}"
         body = json.loads(body_str)
 

@@ -39,6 +39,8 @@ const App = ({ initialConfig }) => {
     };
   }, [config]);
 
+  const [amplifyReady, setAmplifyReady] = useState(false);
+
   useEffect(() => {
     if (!amplifyConfig || configuredRef.current) {
       return;
@@ -47,6 +49,7 @@ const App = ({ initialConfig }) => {
     try {
       Amplify.configure(amplifyConfig);
       configuredRef.current = true;
+      setAmplifyReady(true);
     } catch (err) {
       console.error('Amplify configuration failed:', err);
       setError(err);
@@ -79,6 +82,14 @@ const App = ({ initialConfig }) => {
     }),
     [],
   );
+
+  if (!amplifyReady) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-slate-900 text-slate-200">
+        <p>Initializing…</p>
+      </div>
+    );
+  }
 
   return (
     <Authenticator loginMechanisms={['email']} variation="modal" components={authComponents}>
