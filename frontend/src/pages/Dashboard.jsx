@@ -18,6 +18,7 @@ const Dashboard = ({ apiUrl, userId, userGroups }) => {
   const [jobsError, setJobsError] = useState(null);
   const [selectedJob, setSelectedJob] = useState(null);
   const [renderingJobId, setRenderingJobId] = useState(null);
+  const [detailsTemplate, setDetailsTemplate] = useState(null);
 
   const fileInputRef = useRef();
   const templateFileInputRef = useRef();
@@ -199,7 +200,7 @@ const Dashboard = ({ apiUrl, userId, userGroups }) => {
     event.target.value = '';
   };
 
-  const handleRender = async (job) => {
+  const handleRender = async (job, templateOverrideKey = null) => {
     if (!job?.outputs?.json) {
       alert('Tailored JSON not available for this job yet.');
       return;
@@ -212,11 +213,11 @@ const Dashboard = ({ apiUrl, userId, userGroups }) => {
         jsonS3: job.outputs.json,
         format: 'docx',
       };
-      if (selections?.template?.key) {
-        payload.templateKey = selections.template.key;
-      } else {
-        payload.templateId = 'default';
-      }
+      const effectiveTemplateKey = templateOverrideKey
+        || (detailsTemplate && selectedJob && selectedJob.jobId === job.jobId && detailsTemplate.key)
+        || (selections?.template?.key);
+      if (effectiveTemplateKey) payload.templateKey = effectiveTemplateKey;
+      else payload.templateId = 'default';
       await apiPost(apiUrl, 'render', payload);
       await loadJobs();
     } catch (error) {
@@ -226,6 +227,11 @@ const Dashboard = ({ apiUrl, userId, userGroups }) => {
       setRenderingJobId(null);
     }
   };
+
+  // Reset details template when switching selected job
+  useEffect(() => {
+    setDetailsTemplate(null);
+  }, [selectedJob?.jobId]);
 
   const handleDownload = async (key) => {
     if (!key) return;
@@ -502,6 +508,33 @@ const Dashboard = ({ apiUrl, userId, userGroups }) => {
               <p>Status: {selectedJob.status}</p>
               <p>Provider: {selectedJob.provider}</p>
               <p>Model: {selectedJob.model}</p>
+            </div>
+            <div className="mt-4">
+              <p className="text-xs font-semibold text-slate-300">Render Template</p>
+              <div className="mt-2 flex items-center gap-2">
+                <select
+                  className="flex-1 rounded border border-slate-700 bg-slate-800 p-2 text-xs text-slate-100"
+                  value={detailsTemplate?.key || ''}
+                  onChange={(e) => {
+                    const key = e.target.value;
+                    const found = (uploads.template || []).find((t) => t.key === key) || null;
+                    setDetailsTemplate(found);
+                  }}
+                >
+                  <option value="">Default template</option>
+                  {(uploads.template || []).map((t) => (
+                    <option key={t.key} value={t.key}>{t.fileName}</option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => handleRender(selectedJob, detailsTemplate?.key || null)}
+                  disabled={renderingJobId === selectedJob.jobId}
+                  className="rounded bg-indigo-500 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-400 disabled:opacity-60"
+                >
+                  {renderingJobId === selectedJob.jobId ? 'Rendering…' : 'Render DOCX'}
+                </button>
+              </div>
             </div>
             {shareUrl && (
               <div className="mt-3">
