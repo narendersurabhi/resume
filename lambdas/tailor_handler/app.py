@@ -137,12 +137,14 @@ def _get_openai_key() -> str:
 
 
 def _list_openai_models() -> List[str]:
+    url = "https://api.openai.com/v1/models"
+    req = urllib.request.Request(url)
     key = _get_openai_key()
     if not key:
         raise RuntimeError("OPENAI_API_KEY not configured")
-    url = "https://api.openai.com/v1/models"
-    req = urllib.request.Request(url)
     req.add_header("Authorization", f"Bearer {key}")
+    if OPENAI_PROJECT:
+        req.add_header("OpenAI-Project", OPENAI_PROJECT)
     try:
         with urllib.request.urlopen(req, timeout=20) as resp:
             raw = resp.read().decode("utf-8")
@@ -160,10 +162,6 @@ def _list_openai_models() -> List[str]:
 
 
 def _call_openai(model: str, resume_text: str, job_desc: str) -> Dict[str, Any]:
-    key = _get_openai_key()
-    if not key:
-        raise RuntimeError("OPENAI_API_KEY not configured")
-
     url = "https://api.openai.com/v1/responses"
     payload = {
         "model": model,
@@ -175,8 +173,14 @@ def _call_openai(model: str, resume_text: str, job_desc: str) -> Dict[str, Any]:
     }
 
     req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"))
-    req.add_header("Content-Type", "application/json")
+    # Add required headers (Authorization, optional OpenAI-Project)
+    key = _get_openai_key()
+    if not key:
+        raise RuntimeError("OPENAI_API_KEY not configured")
     req.add_header("Authorization", f"Bearer {key}")
+    req.add_header("Content-Type", "application/json")
+    if OPENAI_PROJECT:
+        req.add_header("OpenAI-Project", OPENAI_PROJECT)
 
     try:
         with urllib.request.urlopen(req, timeout=45) as resp:
