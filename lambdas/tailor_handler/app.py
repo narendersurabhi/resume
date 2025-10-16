@@ -80,14 +80,27 @@ def _presign(bucket: str, key: str, expires: int = 900) -> str:
 def _choose_provider(req_provider: Optional[str], req_model: Optional[str]) -> Tuple[str, str]:
     provider = (req_provider or DEFAULT_PROVIDER).lower()
     model = (req_model or DEFAULT_MODEL)
+
     if provider == "openai":
+        # If caller did not specify a model, prefer the first GPT-5 family model if accessible
+        if not (req_model and str(req_model).strip()):
+            try:
+                models = _list_openai_models()
+                gpt5 = [m for m in models if isinstance(m, str) and m.lower().startswith("gpt-5")]
+                if gpt5:
+                    model = gpt5[0]
+            except Exception as e:
+                logger.info("Model autodetect skipped: %s", e)
+
         if ("*" not in ALLOWED_OPENAI) and (model not in ALLOWED_OPENAI):
             raise ValueError("Unsupported OpenAI model")
+
     elif provider == "bedrock":
         if ("*" not in ALLOWED_BEDROCK) and (model not in ALLOWED_BEDROCK):
             raise ValueError("Unsupported Bedrock model")
     else:
         raise ValueError("Unsupported provider")
+
     return provider, model
 
 
