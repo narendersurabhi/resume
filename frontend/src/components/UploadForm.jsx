@@ -20,8 +20,9 @@ const UploadForm = ({ apiUrl, tenantId, userId, onUploadComplete }) => {
       const reader = new FileReader();
       reader.readAsDataURL(inputFile);
       reader.onload = () => {
-        const result = reader.result;
-        resolve(result.split(',')[1]);
+        const result = reader.result || '';
+        const [, encoded = ''] = String(result).split(',');
+        resolve(encoded);
       };
       reader.onerror = (error) => reject(error);
     });
@@ -53,7 +54,7 @@ const UploadForm = ({ apiUrl, tenantId, userId, onUploadComplete }) => {
     } catch (error) {
       console.error('Upload failed', error);
       const apiMessage = error.response?.data?.error || error.message || 'Unknown error';
-      setMessage(Upload failed: );
+      setMessage(`Upload failed: ${apiMessage}`);
     } finally {
       setUploading(false);
     }
