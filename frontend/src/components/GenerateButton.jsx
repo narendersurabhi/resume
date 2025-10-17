@@ -147,7 +147,7 @@ const GenerateButton = ({
 
   return (
     <div className="space-y-4 rounded-lg bg-slate-900 p-6 shadow">
-      <div className="grid grid-cols-2 gap-3 text-sm">
+      <div className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
         <div>
           <label className="block text-slate-300">Provider</label>
           <select
@@ -181,12 +181,12 @@ const GenerateButton = ({
       <p className="text-xs text-slate-400">
         Choose how to run: Generate Now (sync) returns immediately; Add to Queue (async) runs in the background.
       </p>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <button
           type="button"
           onClick={handleGenerateNow}
           disabled={isGeneratingNow}
-          className="w-full rounded bg-emerald-500 py-3 font-semibold text-slate-900 transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:bg-slate-700"
+          className="w-full rounded bg-emerald-500 py-3 font-semibold text-slate-900 transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-200"
         >
           {isGeneratingNow ? 'Generating…' : 'Generate Now'}
         </button>

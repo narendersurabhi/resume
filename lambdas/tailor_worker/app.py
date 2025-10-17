@@ -2,6 +2,7 @@ import json
 import os
 import time
 import logging
+import random
 import io
 import zipfile
 from typing import Any, Dict, Optional, Tuple, List
@@ -261,24 +262,45 @@ def _call_openai(model: str, resume_text: str, job_desc: str) -> Dict[str, Any]:
             {"role": "system", "content": _system_prompt()},
             {"role": "user", "content": _user_prompt(resume_text, job_desc)},
         ],
+        # Bound output to reduce latency risk
+        "max_output_tokens": 1200,
+        "temperature": 0.3,
     }
-    req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"))
-    req.add_header("Authorization", f"Bearer {key}")
-    req.add_header("Content-Type", "application/json")
-    if OPENAI_PROJECT:
-        req.add_header("OpenAI-Project", OPENAI_PROJECT)
-    try:
-        with urllib.request.urlopen(req, timeout=60) as resp:
-            raw = resp.read().decode("utf-8")
-    except urllib.error.HTTPError as err:
-        detail = err.read().decode("utf-8", "ignore")
-        logger.error("OpenAI HTTPError %s: %s", err.code, detail)
-        raise RuntimeError(f"OpenAI error {err.code}: {detail}") from err
-    except urllib.error.URLError as err:
-        logger.error("OpenAI URLError: %s", err)
-        raise RuntimeError(f"OpenAI connection error: {err}") from err
 
-    data = json.loads(raw)
+    timeouts = [25, 35, 45]
+    last_err = None
+    for attempt, tmo in enumerate(timeouts, start=1):
+        req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"))
+        req.add_header("Authorization", f"Bearer {key}")
+        req.add_header("Content-Type", "application/json")
+        if OPENAI_PROJECT:
+            req.add_header("OpenAI-Project", OPENAI_PROJECT)
+        try:
+            with urllib.request.urlopen(req, timeout=tmo) as resp:
+                raw = resp.read().decode("utf-8")
+                data = json.loads(raw)
+                break
+        except urllib.error.HTTPError as err:
+            detail = err.read().decode("utf-8", "ignore")
+            # Retry on transient errors
+            if err.code in (429, 500, 502, 503, 504) and attempt < len(timeouts):
+                sleep = (1.5 ** (attempt - 1)) + random.uniform(0, 0.25)
+                logger.warning("OpenAI HTTP %s, retrying in %.2fs (attempt %d/%d)", err.code, sleep, attempt, len(timeouts))
+                time.sleep(sleep)
+                last_err = err
+                continue
+            logger.error("OpenAI HTTPError %s: %s", err.code, detail)
+            raise RuntimeError(f"OpenAI error {err.code}: {detail}") from err
+        except Exception as err:  # includes TimeoutError/URLError
+            if attempt < len(timeouts):
+                sleep = (1.5 ** (attempt - 1)) + random.uniform(0, 0.25)
+                logger.warning("OpenAI request error '%s', retrying in %.2fs (attempt %d/%d)", err, sleep, attempt, len(timeouts))
+                time.sleep(sleep)
+                last_err = err
+                continue
+            logger.error("OpenAI request failed after retries: %s", err)
+            raise RuntimeError(f"OpenAI request failed: {err}") from err
+
     text = ""
     for out in data.get("output", []) or []:
         for content in out.get("content", []) or []:
