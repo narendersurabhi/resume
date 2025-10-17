@@ -17,12 +17,14 @@ const GenerateButton = ({
   onGenerated,
   onAfterGenerate,
 }) => {
-  const [isGenerating, setGenerating] = useState(false);
+  const [isQueueing, setQueueing] = useState(false);
+  const [isGeneratingNow, setGeneratingNow] = useState(false);
   const [error, setError] = useState(null);
   const [message, setMessage] = useState(null);
   const [provider, setProvider] = useState('openai');
   const [model, setModel] = useState(DEFAULT_MODEL);
   const [modelOptions, setModelOptions] = useState([DEFAULT_MODEL]);
+  const [preview, setPreview] = useState(null);
 
   const loadModels = async (prov) => {
     try {
@@ -53,7 +55,7 @@ const GenerateButton = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [provider]);
 
-  const handleGenerate = async () => {
+  const buildPayload = () => {
     const hasResumeSelection = Boolean(selections?.resume?.key);
     const hasTemplateSelection = Boolean(selections?.template?.key);
     const hasJobSelection = Boolean(selections?.job?.key);
@@ -65,52 +67,81 @@ const GenerateButton = ({
     if (canUseUploadedFiles && !trimmedJobDescription && !hasJobSelection) {
       setError('Provide a job description or select an uploaded job description before generating.');
       setMessage(null);
-      return;
+      return null;
     }
 
     if (!canUseUploadedFiles) {
       if (!trimmedResumeText) {
         setError('Paste resume text before generating.');
         setMessage(null);
-        return;
+        return null;
       }
       if (!trimmedJobDescription) {
         setError('Provide a job description before generating.');
         setMessage(null);
-        return;
+        return null;
       }
     }
+    const payload = {
+      userId: userId || tenantId || 'anonymous',
+      provider,
+      model,
+    };
+    if (canUseUploadedFiles) {
+      payload.resumeKey = selections?.resume?.key;
+      if (hasJobSelection) payload.jobKey = selections.job.key;
+    } else {
+      payload.resumeText = trimmedResumeText;
+    }
+    if (trimmedJobDescription) payload.jobDescription = trimmedJobDescription;
+    if (selections?.job?.jobId) payload.jobId = selections.job.jobId;
 
-    setGenerating(true);
+    return payload;
+  };
+
+  const handleQueue = async () => {
+    setQueueing(true);
+    setGeneratingNow(false);
+    setPreview(null);
     setError(null);
     setMessage(null);
-
     try {
-      const payload = {
-        userId: userId || tenantId || 'anonymous',
-        provider,
-        model,
-      };
-      if (canUseUploadedFiles) {
-        payload.resumeKey = selections?.resume?.key;
-        if (hasJobSelection) payload.jobKey = selections.job.key;
-      } else {
-        payload.resumeText = trimmedResumeText;
-      }
-      if (trimmedJobDescription) payload.jobDescription = trimmedJobDescription;
-      if (selections?.job?.jobId) payload.jobId = selections.job.jobId;
-
+      const payload = buildPayload();
+      if (!payload) return;
       const response = await apiPost(apiUrl, 'tailor', payload);
       if (onGenerated) onGenerated({ ...response.data, source: 'tailor', provider, model });
       setMessage('Tailor job queued. Refresh jobs to track progress.');
       if (onAfterGenerate) onAfterGenerate();
     } catch (err) {
-      console.error('Generation failed', err);
+      console.error('Queueing failed', err);
       const apiMessage = err.response?.data?.error || err.message || 'Unknown error';
-      setError(`Failed to generate resume: ${apiMessage}`);
-      setMessage(null);
+      setError(`Failed to queue: ${apiMessage}`);
     } finally {
-      setGenerating(false);
+      setQueueing(false);
+    }
+  };
+
+  const handleGenerateNow = async () => {
+    setGeneratingNow(true);
+    setQueueing(false);
+    setPreview(null);
+    setError(null);
+    setMessage(null);
+    try {
+      const payload = buildPayload();
+      if (!payload) return;
+      const response = await apiPost(apiUrl, 'tailor/sync', payload);
+      const data = response.data || {};
+      if (onGenerated) onGenerated({ ...data, source: 'tailor/sync', provider, model });
+      if (data.json) setPreview(data.json);
+      setMessage('Generated successfully. Preview below.');
+      if (onAfterGenerate) onAfterGenerate();
+    } catch (err) {
+      console.error('Sync generation failed', err);
+      const apiMessage = err.response?.data?.error || err.message || 'Unknown error';
+      setError(`Failed to generate now: ${apiMessage}`);
+    } finally {
+      setGeneratingNow(false);
     }
   };
 
@@ -148,18 +179,34 @@ const GenerateButton = ({
         </div>
       </div>
       <p className="text-xs text-slate-400">
-        Jobs run asynchronously. Refresh the Jobs panel to see status and render DOCX when ready.
+        Choose how to run: Generate Now (sync) returns immediately; Add to Queue (async) runs in the background.
       </p>
-      <button
-        type="button"
-        onClick={handleGenerate}
-        disabled={isGenerating}
-        className="w-full rounded bg-indigo-500 py-3 font-semibold text-white transition hover:bg-indigo-400 disabled:cursor-not-allowed disabled:bg-slate-700"
-      >
-        {isGenerating ? 'Generating…' : 'Generate Tailored Resume'}
-      </button>
+      <div className="grid grid-cols-2 gap-3">
+        <button
+          type="button"
+          onClick={handleGenerateNow}
+          disabled={isGeneratingNow}
+          className="w-full rounded bg-emerald-500 py-3 font-semibold text-slate-900 transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:bg-slate-700"
+        >
+          {isGeneratingNow ? 'Generating…' : 'Generate Now'}
+        </button>
+        <button
+          type="button"
+          onClick={handleQueue}
+          disabled={isQueueing}
+          className="w-full rounded bg-indigo-500 py-3 font-semibold text-white transition hover:bg-indigo-400 disabled:cursor-not-allowed disabled:bg-slate-700"
+        >
+          {isQueueing ? 'Queueing…' : 'Add to Queue'}
+        </button>
+      </div>
       {error && <p className="mt-3 text-sm text-rose-400">{error}</p>}
       {message && <p className="mt-3 text-sm text-emerald-400">{message}</p>}
+      {preview ? (
+        <div className="mt-4">
+          <p className="text-xs font-semibold text-slate-300">Preview</p>
+          <pre className="mt-2 max-h-64 overflow-auto rounded bg-slate-950 p-3 text-xs text-slate-200">{JSON.stringify(preview, null, 2)}</pre>
+        </div>
+      ) : null}
     </div>
   );
 };

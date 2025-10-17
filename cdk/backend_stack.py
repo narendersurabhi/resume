@@ -368,7 +368,14 @@ class BackendStack(Stack):
             cognito_user_pools=[user_pool],
         )
 
-        api.root.add_resource("tailor").add_method(
+        tailor_root = api.root.add_resource("tailor")
+        tailor_root.add_method(
+            "POST",
+            apigateway.LambdaIntegration(tailor_fn),
+            authorizer=authorizer,
+            authorization_type=apigateway.AuthorizationType.COGNITO,
+        )
+        tailor_root.add_resource("sync").add_method(
             "POST",
             apigateway.LambdaIntegration(tailor_fn),
             authorizer=authorizer,

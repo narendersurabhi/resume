@@ -59,19 +59,27 @@ def handler(event, context):
         logger.error("Unexpected event payload: %s", event)
         return
 
+    sync_results: List[Dict[str, Any]] = []
     for message in messages:
         job_id = message.get("jobId")
         if not job_id:
             logger.error("Skipping message with no jobId: %s", message)
             continue
         try:
-            _process_tailor(message)
+            result = _process_tailor(message)
+            if message.get("sync"):
+                sync_results.append(result)
         except Exception as exc:  # noqa: BLE001
             logger.exception("Tailor job %s failed", job_id)
             _mark_failed(message, str(exc))
+            if message.get("sync"):
+                return {"ok": False, "error": str(exc), "jobId": job_id}
+
+    if sync_results:
+        return {"ok": True, "results": sync_results}
 
 
-def _process_tailor(message: Dict[str, Any]) -> None:
+def _process_tailor(message: Dict[str, Any]) -> Dict[str, Any]:
     if not table:
         raise RuntimeError("Jobs table not configured")
 
@@ -158,6 +166,16 @@ def _process_tailor(message: Dict[str, Any]) -> None:
     )
 
     _append_event(job_id, user_id, "generated", {"provider": provider, "model": model})
+
+    return {
+        "jobId": job_id,
+        "userId": user_id,
+        "provider": provider,
+        "model": model,
+        "status": "generated",
+        "json": normalized,
+        "jsonS3": {"bucket": JOBS_BUCKET, "key": json_key},
+    }
 
 
 def _mark_failed(message: Dict[str, Any], error: str) -> None:
@@ -346,12 +364,13 @@ def _validate_resume_json(data: Dict[str, Any]) -> None:
 def _append_event(job_id: str, user_id: str, action: str, meta: Optional[Dict[str, Any]] = None) -> None:
     if table is None:
         return
-    ev = {"ts": int(time.time()), "userId": user_id, "action": action, "meta": meta or {}}
+    now = int(time.time())
+    ev = {"ts": now, "userId": user_id, "action": action, "meta": meta or {}}
     try:
         table.update_item(
             Key={"jobId": job_id},
-            UpdateExpression="SET events = list_append(if_not_exists(events, :empty), :e)",
-            ExpressionAttributeValues={":e": [ev], ":empty": []},
+            UpdateExpression="SET events = list_append(if_not_exists(events, :empty), :e), updatedAt=:ts",
+            ExpressionAttributeValues={":e": [ev], ":empty": [], ":ts": now},
         )
     except Exception as exc:  # noqa: BLE001
         logger.error("Failed to append event for job %s: %s", job_id, exc)

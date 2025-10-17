@@ -6,6 +6,7 @@ import logging
 from typing import Any, Dict, Optional, Tuple, List
 
 import boto3
+from botocore.config import Config
 import urllib.request
 import urllib.error
 from boto3.dynamodb.conditions import Attr
@@ -18,7 +19,7 @@ S3_BUCKET = os.getenv("JOBS_BUCKET", "")
 TABLE_NAME = os.getenv("JOBS_TABLE", "")
 STORAGE_BUCKET = os.getenv("STORAGE_BUCKET", "")
 DEFAULT_PROVIDER = os.getenv("MODEL_PROVIDER", "openai")
-DEFAULT_MODEL = os.getenv("MODEL_ID", "gpt-4o-mini")
+DEFAULT_MODEL = os.getenv("MODEL_ID", "gpt-5-mini")
 OPENAI_SECRET_NAME = os.getenv("OPENAI_SECRET_NAME", "openai/api-key")
 OPENAI_PROJECT = os.getenv("OPENAI_PROJECT", "").strip()
 ENABLE_LLM = os.getenv("ENABLE_LLM", "false").lower() in ("1", "true", "yes")
@@ -401,6 +402,204 @@ def handler(event, context):
             s3.put_object(Bucket=S3_BUCKET, Key=key, Body=json.dumps(revised, ensure_ascii=False, indent=2).encode("utf-8"))
             _append_event(job_id, user_id, "refined", {"provider": prov, "model": mdl})
             return _json_response(200, {"ok": True, "jobId": job_id, "jsonS3": {"bucket": S3_BUCKET, "key": key}})
+
+        # POST /tailor/sync -> run tailoring inline and return the JSON immediately
+        if http_method == "POST" and path.endswith("/tailor/sync"):
+            body_str = event.get("body") or "{}"
+            body = json.loads(body_str)
+
+            # Inputs
+            resume_text = (body.get("resumeText") or "").strip()
+            job_desc = (body.get("jobDescription") or "").strip()
+            resume_key = (body.get("resumeKey") or "").strip()
+            job_key = (body.get("jobKey") or "").strip()
+            resume_s3 = body.get("resumeS3")
+            jd_s3 = body.get("jobDescS3")
+
+            # Always derive user_id from the authenticated token
+            user_id = (claim_user or "anonymous").strip() or "anonymous"
+            job_id = body.get("jobId") or uuid.uuid4().hex
+            provider = (body.get("provider") or DEFAULT_PROVIDER).lower()
+            model = body.get("model") or DEFAULT_MODEL
+
+            if not S3_BUCKET or not TABLE_NAME:
+                return _json_response(500, {"ok": False, "error": "Service not configured (bucket/table)"})
+
+            ts = int(time.time())
+            base_prefix = f"resume-jobs/{user_id}/{job_id}"
+            inputs_prefix = f"{base_prefix}/inputs"
+
+            # Optional: load DOCX from storage bucket and persist extracted text under jobs bucket
+            if resume_key:
+                if not STORAGE_BUCKET:
+                    return _json_response(400, {"ok": False, "error": "Storage bucket not configured for resumeKey"})
+                try:
+                    blob = s3.get_object(Bucket=STORAGE_BUCKET, Key=resume_key)["Body"].read()
+                    resume_text = _docx_bytes_to_text(blob)
+                    s3.put_object(Bucket=S3_BUCKET, Key=f"{inputs_prefix}/reference-resume.txt", Body=resume_text.encode("utf-8"))
+                    resume_s3 = {"bucket": S3_BUCKET, "key": f"{inputs_prefix}/reference-resume.txt"}
+                except Exception as e:
+                    return _json_response(400, {"ok": False, "error": f"Failed to read resumeKey: {str(e)}"})
+            elif resume_text:
+                s3.put_object(Bucket=S3_BUCKET, Key=f"{inputs_prefix}/reference-resume.txt", Body=resume_text.encode("utf-8"))
+                resume_s3 = {"bucket": S3_BUCKET, "key": f"{inputs_prefix}/reference-resume.txt"}
+
+            if job_key:
+                if not STORAGE_BUCKET:
+                    return _json_response(400, {"ok": False, "error": "Storage bucket not configured for jobKey"})
+                try:
+                    blob = s3.get_object(Bucket=STORAGE_BUCKET, Key=job_key)["Body"].read()
+                    job_desc = _docx_bytes_to_text(blob)
+                    s3.put_object(Bucket=S3_BUCKET, Key=f"{inputs_prefix}/jd.txt", Body=job_desc.encode("utf-8"))
+                    jd_s3 = {"bucket": S3_BUCKET, "key": f"{inputs_prefix}/jd.txt"}
+                except Exception as e:
+                    return _json_response(400, {"ok": False, "error": f"Failed to read jobKey: {str(e)}"})
+            elif job_desc:
+                s3.put_object(Bucket=S3_BUCKET, Key=f"{inputs_prefix}/jd.txt", Body=job_desc.encode("utf-8"))
+                jd_s3 = {"bucket": S3_BUCKET, "key": f"{inputs_prefix}/jd.txt"}
+
+            if not resume_text:
+                return _json_response(400, {"ok": False, "error": "Resume not provided (resumeKey or resumeText required)"})
+            if not job_desc:
+                return _json_response(400, {"ok": False, "error": "Job description not provided (jobKey or jobDescription required)"})
+
+            provider, model = _choose_provider(provider, model)
+            tenant_id = body.get("tenantId") or "demo-tenant"
+            auto_render = bool(body.get("autoRender"))
+            auto_render_template = body.get("autoRenderTemplateKey") or body.get("templateKey")
+
+            inputs: Dict[str, Any] = {}
+            if resume_s3:
+                inputs["resume"] = resume_s3
+            if jd_s3:
+                inputs["jobDesc"] = jd_s3
+
+            if table is not None:
+                item = {
+                    "jobId": job_id,
+                    "userId": user_id,
+                    "tenantId": tenant_id,
+                    "createdAt": ts,
+                    "provider": provider,
+                    "model": model,
+                    "inputs": inputs,
+                    "outputs": {},
+                    "status": "processing",
+                }
+                if auto_render and auto_render_template:
+                    item["autoRenderTemplateKey"] = auto_render_template
+                item["shareToken"] = uuid.uuid4().hex[:16]
+                table.put_item(Item=item)
+                _append_event(job_id, user_id, "queued", {"provider": provider, "model": model})
+
+            worker_fn = os.getenv("TAILOR_WORKER_FN")
+            if not worker_fn:
+                if table is not None:
+                    table.update_item(
+                        Key={"jobId": job_id},
+                        UpdateExpression="SET #s=:st, errorMessage=:err, updatedAt=:ts",
+                        ExpressionAttributeNames={"#s": "status"},
+                        ExpressionAttributeValues={":st": "failed", ":err": "worker function not configured", ":ts": ts},
+                    )
+                return _json_response(500, {"ok": False, "error": "Tailor worker not configured"})
+
+            message = {
+                "action": "tailor",
+                "jobId": job_id,
+                "userId": user_id,
+                "tenantId": tenant_id,
+                "provider": provider,
+                "model": model,
+                "resumeText": resume_text,
+                "jobDescription": job_desc,
+                "resumeKey": resume_key,
+                "jobKey": job_key,
+                "sync": True,
+            }
+            if resume_s3:
+                message["resumeS3"] = resume_s3
+            if jd_s3:
+                message["jobDescS3"] = jd_s3
+            if auto_render and auto_render_template:
+                message["autoRenderTemplateKey"] = auto_render_template
+
+            # Use a short read timeout for sync path to avoid API Gateway 29s limit
+            lambda_client_sync = boto3.client(
+                "lambda",
+                config=Config(read_timeout=25, connect_timeout=3, retries={"max_attempts": 0}),
+            )
+            try:
+                resp = lambda_client_sync.invoke(
+                    FunctionName=worker_fn,
+                    InvocationType="RequestResponse",
+                    Payload=json.dumps(message).encode("utf-8"),
+                )
+            except Exception as exc:  # noqa: BLE001
+                # Fall back to async queue if sync call times out or fails to return promptly
+                logger.warning(
+                    "Sync invoke failed for job %s, falling back to async queue: %s",
+                    job_id,
+                    exc,
+                )
+                try:
+                    lambda_client.invoke(
+                        FunctionName=worker_fn,
+                        InvocationType="Event",
+                        Payload=json.dumps(message).encode("utf-8"),
+                    )
+                except Exception as exc2:  # noqa: BLE001
+                    logger.error("Failed to queue tailor job after sync failure %s: %s", job_id, exc2)
+                    if table is not None:
+                        table.update_item(
+                            Key={"jobId": job_id},
+                            UpdateExpression="SET #s=:st, errorMessage=:err, updatedAt=:ts",
+                            ExpressionAttributeNames={"#s": "status"},
+                            ExpressionAttributeValues={":st": "failed", ":err": str(exc2), ":ts": ts},
+                        )
+                    return _json_response(500, {"ok": False, "error": "Failed to run tailor job"})
+                # Async fallback accepted
+                return _json_response(202, {"ok": True, "jobId": job_id, "status": "processing", "notice": "Sync exceeded timeout; job queued"})
+
+            # Parse worker response
+            try:
+                payload_raw = resp.get("Payload").read().decode("utf-8") if resp.get("Payload") else "{}"
+                payload_obj = json.loads(payload_raw or "{}") if payload_raw else {}
+            except Exception as exc:  # noqa: BLE001
+                logger.error("Failed to parse worker sync response for job %s: %s | raw=%s", job_id, exc, payload_raw)
+                return _json_response(500, {"ok": False, "error": "Invalid worker response"})
+
+            if resp.get("FunctionError"):
+                err_msg = payload_obj.get("errorMessage") or "Worker function error"
+                return _json_response(500, {"ok": False, "error": err_msg, "jobId": job_id})
+
+            # Worker returns { ok: True, results: [ { jobId, json, jsonS3, ... } ] } for sync
+            if isinstance(payload_obj, dict) and payload_obj.get("ok"):
+                result = None
+                results = payload_obj.get("results")
+                if isinstance(results, list) and results:
+                    result = results[0]
+                elif isinstance(payload_obj, dict):
+                    result = payload_obj
+
+                if not isinstance(result, dict):
+                    return _json_response(500, {"ok": False, "error": "Malformed worker result"})
+
+                return _json_response(
+                    200,
+                    {
+                        "ok": True,
+                        "jobId": result.get("jobId", job_id),
+                        "status": result.get("status", "generated"),
+                        "provider": result.get("provider", provider),
+                        "model": result.get("model", model),
+                        "json": result.get("json"),
+                        "jsonS3": result.get("jsonS3"),
+                    },
+                )
+
+            # Error path propagated by worker
+            err_detail = payload_obj.get("error") if isinstance(payload_obj, dict) else None
+            return _json_response(400, {"ok": False, "error": err_detail or "Tailor failed", "jobId": job_id})
 
         body_str = event.get("body") or "{}"
         body = json.loads(body_str)
