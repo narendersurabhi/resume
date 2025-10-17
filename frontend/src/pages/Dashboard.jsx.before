@@ -271,8 +271,9 @@ const Dashboard = ({ apiUrl, userId, userGroups }) => {
   const selectedJobDocxKey = selectedJob?.outputs?.render?.docx?.key;
   const selectedJobPdfKey = selectedJob?.outputs?.render?.pdf?.key;
   const shareToken = selectedJob?.shareToken;
-  
-  const canRetry = useMemo(() => Boolean(selectedJob?.inputs?.resume && selectedJob?.inputs?.jobDesc), [selectedJob?.inputs?.resume, selectedJob?.inputs?.jobDesc]);
+  const shareUrl = shareToken && typeof window !== 'undefined'
+    ? `${window.location.origin}/?share=${shareToken}`
+    : null;
 
   return (
     <main className="mx-auto flex max-w-6xl flex-col gap-8 p-6">
@@ -598,8 +599,6 @@ const Dashboard = ({ apiUrl, userId, userGroups }) => {
 };
 
 export default Dashboard;
-
-
 
 
 
