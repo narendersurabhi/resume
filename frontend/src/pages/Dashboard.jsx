@@ -17,6 +17,8 @@ const Dashboard = ({ apiUrl, userId, userGroups }) => {
   const [jobsLoading, setJobsLoading] = useState(false);
   const [jobsError, setJobsError] = useState(null);
   const [selectedJob, setSelectedJob] = useState(null);
+  const [renderingJobId, setRenderingJobId] = useState(null);
+  const [detailsTemplate, setDetailsTemplate] = useState(null);
   
   // Retry UI state
   const [retryProvider, setRetryProvider] = useState('openai');
