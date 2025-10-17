@@ -263,6 +263,44 @@ class BackendStack(Stack):
             )
         )
 
+        tailor_worker = lambda_.Function(
+            self,
+            "TailorWorker",
+            runtime=lambda_.Runtime.PYTHON_3_12,
+            handler="app.handler",
+            code=lambda_.Code.from_asset("lambdas/tailor_worker"),
+            environment={
+                "JOBS_BUCKET": jobs_bucket.bucket_name,
+                "JOBS_TABLE": jobs_table.table_name,
+                "MODEL_PROVIDER": "openai",
+                "MODEL_ID": "gpt-5-pro",
+                "OPENAI_PROJECT": "proj_rHvrAwby02gARWlZwjSSbHvV",
+                "ENABLE_LLM": "true",
+                "STORAGE_BUCKET": bucket.bucket_name,
+            },
+            memory_size=512,
+            timeout=Duration.seconds(120),
+            log_retention=logs.RetentionDays.ONE_WEEK,
+        )
+
+        tailor_worker.add_to_role_policy(
+            iam.PolicyStatement(
+                actions=["secretsmanager:GetSecretValue"],
+                resources=[
+                    f"arn:aws:secretsmanager:{self.region}:{self.account}:secret:openai/api-key-*",
+                ],
+            )
+        )
+        tailor_worker.add_to_role_policy(
+            iam.PolicyStatement(
+                actions=["bedrock:InvokeModel"],
+                resources=[f"arn:aws:bedrock:{self.region}::foundation-model/openai.gpt-oss-120b-1:0"],
+            )
+        )
+
+        tailor_worker.grant_invoke(tailor_fn)
+        tailor_fn.add_environment("TAILOR_WORKER_FN", tailor_worker.function_name)
+
         # Templates bucket for DOCX templates
         templates_bucket = s3.Bucket(
             self,
@@ -305,14 +343,17 @@ class BackendStack(Stack):
         bucket.grant_read(render_fn)
 
         jobs_bucket.grant_read_write(tailor_fn)
+        jobs_bucket.grant_read_write(tailor_worker)
         jobs_bucket.grant_read_write(render_fn)
         # Download function needs read on jobs bucket, and env to switch presign bucket
         jobs_bucket.grant_read(download_function)
         download_function.add_environment("JOBS_BUCKET", jobs_bucket.bucket_name)
         jobs_table.grant_read_write_data(tailor_fn)
+        jobs_table.grant_read_write_data(tailor_worker)
         jobs_table.grant_read_write_data(render_fn)
         # Allow tailor to read uploaded resumes/templates from the primary storage bucket
         bucket.grant_read(tailor_fn)
+        bucket.grant_read(tailor_worker)
 
         # API routes for tailoring and rendering
         # Cognito authorizer using exported User Pool from AuthStack

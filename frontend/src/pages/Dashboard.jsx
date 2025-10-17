@@ -31,9 +31,12 @@ const Dashboard = ({ apiUrl, userId, userGroups }) => {
   };
 
   const handleGenerated = (result) => {
+    const id = result.jobId || result.outputId || `job-${Date.now()}`;
     setGeneratedOutputs((prev) => [
       {
         ...result,
+        outputId: id,
+        status: result.status || 'processing',
         createdAt: new Date().toISOString(),
         docxUrl: null,
         pdfUrl: null,
@@ -382,6 +385,9 @@ const Dashboard = ({ apiUrl, userId, userGroups }) => {
                 <div>
                   <p className="font-semibold">Output {output.outputId ?? output.jobId}</p>
                   <p className="text-xs text-slate-400">Generated {output.createdAt}</p>
+                  {output.status && (
+                    <p className="text-xs text-slate-500">Status: {output.status}</p>
+                  )}
                   {output.linksError && (
                     <p className="mt-1 text-xs text-rose-400">{output.linksError}</p>
                   )}

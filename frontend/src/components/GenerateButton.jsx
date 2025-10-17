@@ -22,7 +22,6 @@ const GenerateButton = ({
   const [message, setMessage] = useState(null);
   const [provider, setProvider] = useState('openai');
   const [model, setModel] = useState(DEFAULT_MODEL);
-  const [autoRender, setAutoRender] = useState(true);
   const [modelOptions, setModelOptions] = useState([DEFAULT_MODEL]);
 
   const loadModels = async (prov) => {
@@ -87,50 +86,24 @@ const GenerateButton = ({
     setMessage(null);
 
     try {
-      if (canUseUploadedFiles) {
-        const payload = {
-          userId: userId || tenantId || 'anonymous',
-          provider,
-          model,
-          resumeKey: selections.resume.key,
-        };
-        if (hasJobSelection) payload.jobKey = selections.job.key;
-        if (trimmedJobDescription) payload.jobDescription = trimmedJobDescription;
-
-        const response = await apiPost(apiUrl, 'tailor', payload);
-        if (onGenerated) onGenerated({ ...response.data, source: 'tailor' });
-        setMessage(`Tailor request submitted (job ${response.data?.jobId ?? 'unknown'})`);
-
-        if (autoRender && selections?.template?.key) {
-          try {
-            await apiPost(apiUrl, 'render', {
-              jobId: response.data?.jobId,
-              userId: userId || tenantId || 'anonymous',
-              jsonS3: response.data?.jsonS3,
-              templateKey: selections.template.key,
-              format: 'docx',
-            });
-          } catch (e) {
-            console.error('Auto-render failed', e);
-          }
-        }
-        if (onAfterGenerate) onAfterGenerate();
-        return;
-      }
-
       const payload = {
         userId: userId || tenantId || 'anonymous',
-        resumeText: trimmedResumeText,
-        jobDescription: trimmedJobDescription,
         provider,
         model,
       };
+      if (canUseUploadedFiles) {
+        payload.resumeKey = selections?.resume?.key;
+        if (hasJobSelection) payload.jobKey = selections.job.key;
+      } else {
+        payload.resumeText = trimmedResumeText;
+      }
+      if (trimmedJobDescription) payload.jobDescription = trimmedJobDescription;
       if (selections?.job?.jobId) payload.jobId = selections.job.jobId;
 
       const response = await apiPost(apiUrl, 'tailor', payload);
-      if (onGenerated) onGenerated(response.data);
+      if (onGenerated) onGenerated({ ...response.data, source: 'tailor', provider, model });
+      setMessage('Tailor job queued. Refresh jobs to track progress.');
       if (onAfterGenerate) onAfterGenerate();
-      setMessage(`Tailor request submitted (job ${response.data?.jobId ?? 'unknown'})`);
     } catch (err) {
       console.error('Generation failed', err);
       const apiMessage = err.response?.data?.error || err.message || 'Unknown error';
@@ -174,10 +147,9 @@ const GenerateButton = ({
           </select>
         </div>
       </div>
-      <label className="flex items-center gap-2 text-xs text-slate-300">
-        <input type="checkbox" checked={autoRender} onChange={(e) => setAutoRender(e.target.checked)} />
-        Auto-render to DOCX after tailoring
-      </label>
+      <p className="text-xs text-slate-400">
+        Jobs run asynchronously. Refresh the Jobs panel to see status and render DOCX when ready.
+      </p>
       <button
         type="button"
         onClick={handleGenerate}

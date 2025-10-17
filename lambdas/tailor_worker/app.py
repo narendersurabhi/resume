@@ -1,0 +1,358 @@
+import json
+import os
+import time
+import logging
+import io
+import zipfile
+from typing import Any, Dict, Optional, Tuple, List
+
+import boto3
+import urllib.request
+import urllib.error
+from xml.etree import ElementTree as ET
+
+S3_BUCKET = os.getenv("JOBS_BUCKET", "")
+TABLE_NAME = os.getenv("JOBS_TABLE", "")
+STORAGE_BUCKET = os.getenv("STORAGE_BUCKET", "")
+DEFAULT_PROVIDER = os.getenv("MODEL_PROVIDER", "openai")
+DEFAULT_MODEL = os.getenv("MODEL_ID", "gpt-5-pro")
+OPENAI_SECRET_NAME = os.getenv("OPENAI_SECRET_NAME", "openai/api-key")
+OPENAI_PROJECT = os.getenv("OPENAI_PROJECT", "").strip()
+ENABLE_LLM = os.getenv("ENABLE_LLM", "false").lower() in ("1", "true", "yes")
+ALLOWED_OPENAI = set((os.getenv("ALLOWED_OPENAI_MODELS", "*").split(",")))
+ALLOWED_BEDROCK = set((os.getenv("ALLOWED_BEDROCK_MODELS", "anthropic.claude-3-5-sonnet-2024-06-20").split(",")))
+BEDROCK_REGION = os.getenv("BEDROCK_REGION", os.getenv("AWS_REGION", "us-east-1"))
+
+s3 = boto3.client("s3")
+dynamodb = boto3.resource("dynamodb")
+table = dynamodb.Table(TABLE_NAME) if TABLE_NAME else None
+secrets = boto3.client("secretsmanager")
+bedrock = boto3.client("bedrock-runtime", region_name=BEDROCK_REGION)
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+
+def handler(event, context):
+    messages: List[Dict[str, Any]] = []
+    if isinstance(event, str):
+        try:
+            event = json.loads(event)
+        except json.JSONDecodeError:
+            logger.error("Invalid JSON payload: %s", event)
+            return
+
+    if isinstance(event, dict) and "Records" in event:
+        for record in event["Records"]:
+            body = record.get("body")
+            if isinstance(body, str):
+                try:
+                    body = json.loads(body)
+                except json.JSONDecodeError:
+                    logger.error("Invalid record body JSON: %s", body)
+                    continue
+            if isinstance(body, dict):
+                messages.append(body)
+    elif isinstance(event, dict):
+        messages.append(event)
+    else:
+        logger.error("Unexpected event payload: %s", event)
+        return
+
+    for message in messages:
+        job_id = message.get("jobId")
+        if not job_id:
+            logger.error("Skipping message with no jobId: %s", message)
+            continue
+        try:
+            _process_tailor(message)
+        except Exception as exc:  # noqa: BLE001
+            logger.exception("Tailor job %s failed", job_id)
+            _mark_failed(message, str(exc))
+
+
+def _process_tailor(message: Dict[str, Any]) -> None:
+    if not table:
+        raise RuntimeError("Jobs table not configured")
+
+    job_id = message["jobId"]
+    user_id = message.get("userId") or "anonymous"
+    provider = message.get("provider") or DEFAULT_PROVIDER
+    model = message.get("model") or DEFAULT_MODEL
+    tenant_id = message.get("tenantId") or "demo-tenant"
+
+    provider, model = _choose_provider(provider, model)
+
+    resume_text = message.get("resumeText") or ""
+    job_desc = message.get("jobDescription") or ""
+    resume_key = (message.get("resumeKey") or "").strip()
+    job_key = (message.get("jobKey") or "").strip()
+    resume_s3 = message.get("resumeS3")
+    job_desc_s3 = message.get("jobDescS3")
+
+    if not resume_text and resume_key and STORAGE_BUCKET:
+        resume_text = _load_docx_text(STORAGE_BUCKET, resume_key)
+        if resume_text and JOBS_BUCKET:
+            resume_key = f"resume-jobs/{user_id}/{job_id}/inputs/reference-resume.txt"
+            s3.put_object(Bucket=JOBS_BUCKET, Key=resume_key, Body=resume_text.encode("utf-8"))
+            resume_s3 = {"bucket": JOBS_BUCKET, "key": resume_key}
+
+    if not job_desc and job_key and STORAGE_BUCKET:
+        job_desc = _load_docx_text(STORAGE_BUCKET, job_key)
+        if job_desc and JOBS_BUCKET:
+            job_key = f"resume-jobs/{user_id}/{job_id}/inputs/jd.txt"
+            s3.put_object(Bucket=JOBS_BUCKET, Key=job_key, Body=job_desc.encode("utf-8"))
+            job_desc_s3 = {"bucket": JOBS_BUCKET, "key": job_key}
+
+    if not resume_text or not job_desc:
+        raise ValueError("Resume text and job description are required")
+
+    if ENABLE_LLM:
+        if provider == "openai":
+            normalized = _call_openai(model, resume_text, job_desc)
+        elif provider == "bedrock":
+            normalized = _call_bedrock(model, resume_text, job_desc)
+        else:
+            raise ValueError("Unsupported provider")
+    else:
+        normalized = {
+            "header": {"name": "", "title": "", "contact": ""},
+            "summary": "",
+            "skills": [],
+            "experience": [],
+            "education": [],
+            "extras": {},
+        }
+
+    _validate_resume_json(normalized)
+
+    ts = int(time.time())
+    json_key = f"resume-jobs/{user_id}/{job_id}/outputs/tailored.json"
+    s3.put_object(
+        Bucket=JOBS_BUCKET,
+        Key=json_key,
+        Body=json.dumps(normalized, ensure_ascii=False, indent=2).encode("utf-8"),
+    )
+
+    version = {
+        "versionId": "v1",
+        "createdAt": ts,
+        "json": {"bucket": JOBS_BUCKET, "key": json_key},
+        "scores": None,
+        "accepted": False,
+    }
+    outputs = {"json": {"bucket": JOBS_BUCKET, "key": json_key}}
+
+    table.update_item(
+        Key={"jobId": job_id},
+        UpdateExpression="SET #s=:st, outputs=:out, versions=:vers, updatedAt=:ts, provider=:prov, model=:mdl",
+        ExpressionAttributeNames={"#s": "status"},
+        ExpressionAttributeValues={
+            ":st": "generated",
+            ":out": outputs,
+            ":vers": [version],
+            ":ts": ts,
+            ":prov": provider,
+            ":mdl": model,
+        },
+    )
+
+    _append_event(job_id, user_id, "generated", {"provider": provider, "model": model})
+
+
+def _mark_failed(message: Dict[str, Any], error: str) -> None:
+    if not table:
+        return
+    job_id = message.get("jobId")
+    user_id = message.get("userId") or "anonymous"
+    ts = int(time.time())
+    table.update_item(
+        Key={"jobId": job_id},
+        UpdateExpression="SET #s=:st, errorMessage=:err, updatedAt=:ts",
+        ExpressionAttributeNames={"#s": "status"},
+        ExpressionAttributeValues={":st": "failed", ":err": error, ":ts": ts},
+    )
+    _append_event(job_id, user_id, "failed", {"error": error})
+
+
+def _load_docx_text(bucket: str, key: str) -> str:
+    try:
+        blob = s3.get_object(Bucket=bucket, Key=key)["Body"].read()
+    except Exception as exc:  # noqa: BLE001
+        logger.error("Failed to load DOCX %s/%s: %s", bucket, key, exc)
+        return ""
+    return _docx_bytes_to_text(blob)
+
+
+def _docx_bytes_to_text(blob: bytes) -> str:
+    try:
+        with zipfile.ZipFile(io.BytesIO(blob)) as z:
+            xml = z.read("word/document.xml")
+    except Exception:
+        return ""
+    try:
+        ns = {"w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"}
+        root = ET.fromstring(xml)
+        texts: List[str] = []
+        for t in root.findall(".//w:t", ns):
+            if t.text:
+                texts.append(t.text)
+        return " ".join(texts).strip()
+    except Exception:
+        return ""
+
+
+def _choose_provider(req_provider: Optional[str], req_model: Optional[str]) -> Tuple[str, str]:
+    provider = (req_provider or DEFAULT_PROVIDER).lower()
+    model = req_model or DEFAULT_MODEL
+    if provider == "openai":
+        if "*" not in ALLOWED_OPENAI and model not in ALLOWED_OPENAI:
+            raise ValueError("Unsupported OpenAI model")
+    elif provider == "bedrock":
+        if "*" not in ALLOWED_BEDROCK and model not in ALLOWED_BEDROCK:
+            raise ValueError("Unsupported Bedrock model")
+    else:
+        raise ValueError("Unsupported provider")
+    return provider, model
+
+
+def _get_openai_key() -> str:
+    env_key = os.getenv("OPENAI_API_KEY")
+    if env_key:
+        return env_key
+    try:
+        val = secrets.get_secret_value(SecretId=OPENAI_SECRET_NAME)
+        s = val.get("SecretString") or ""
+        try:
+            obj = json.loads(s)
+            return obj.get("OPENAI_API_KEY") or obj.get("api_key") or s
+        except Exception:
+            return s
+    except Exception:
+        return os.getenv("OPENAI_API_KEY", "")
+
+
+def _call_openai(model: str, resume_text: str, job_desc: str) -> Dict[str, Any]:
+    key = _get_openai_key()
+    if not key:
+        raise RuntimeError("OPENAI_API_KEY not configured")
+    url = "https://api.openai.com/v1/responses"
+    payload = {
+        "model": model,
+        "input": [
+            {"role": "system", "content": _system_prompt()},
+            {"role": "user", "content": _user_prompt(resume_text, job_desc)},
+        ],
+    }
+    req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"))
+    req.add_header("Authorization", f"Bearer {key}")
+    req.add_header("Content-Type", "application/json")
+    if OPENAI_PROJECT:
+        req.add_header("OpenAI-Project", OPENAI_PROJECT)
+    try:
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            raw = resp.read().decode("utf-8")
+    except urllib.error.HTTPError as err:
+        detail = err.read().decode("utf-8", "ignore")
+        logger.error("OpenAI HTTPError %s: %s", err.code, detail)
+        raise RuntimeError(f"OpenAI error {err.code}: {detail}") from err
+    except urllib.error.URLError as err:
+        logger.error("OpenAI URLError: %s", err)
+        raise RuntimeError(f"OpenAI connection error: {err}") from err
+
+    data = json.loads(raw)
+    text = ""
+    for out in data.get("output", []) or []:
+        for content in out.get("content", []) or []:
+            if content.get("type") in ("output_text", "text"):
+                text += content.get("text", "")
+
+    if not text and "output_text" in data:
+        text = data.get("output_text", "")
+
+    if not text and data.get("response"):
+        for content in data["response"].get("content", []) or []:
+            if content.get("type") in ("output_text", "text"):
+                text += content.get("text", "")
+
+    if not text:
+        logger.warning("OpenAI response lacked textual content")
+        return {}
+
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError as err:
+        logger.error("Failed to decode OpenAI JSON: %s | text=%s", err, text)
+        raise RuntimeError(f"OpenAI response was not valid JSON: {err}") from err
+
+
+def _call_bedrock(model: str, resume_text: str, job_desc: str) -> Dict[str, Any]:
+    body = {
+        "anthropic_version": "bedrock-2023-05-31",
+        "max_tokens": 1500,
+        "temperature": 0.4,
+        "system": _system_prompt(),
+        "messages": [
+            {"role": "user", "content": [{"type": "text", "text": _user_prompt(resume_text, job_desc)}]}
+        ],
+    }
+    result = bedrock.invoke_model(
+        modelId=model,
+        body=json.dumps(body),
+        accept="application/json",
+        contentType="application/json",
+    )
+    payload = json.loads(result["body"].read())
+    text = ""
+    for block in payload.get("content", []):
+        if block.get("type") == "text":
+            text += block.get("text", "")
+    return json.loads(text or "{}")
+
+
+def _system_prompt() -> str:
+    return (
+        "You are a resume tailoring assistant. Keep content truthful; align with the job description; "
+        "prefer measurable impact; return ONLY a strict JSON object matching the requested schema."
+    )
+
+
+def _user_prompt(resume_text: str, job_desc: str) -> str:
+    return (
+        f"Resume:\\n{resume_text}\\n\\nJob Description:\\n{job_desc}\\n\\n"
+        "Return JSON with keys: header{name,title,contact}, summary, skills[], "
+        "experience[{ company,title,start,end,bullets[] }], education[{ school,degree,year }], extras? (object). No markdown."
+    )
+
+
+def _validate_resume_json(data: Dict[str, Any]) -> None:
+    def expect(cond: bool, msg: str):
+        if not cond:
+            raise ValueError(f"Schema error: {msg}")
+
+    expect(isinstance(data, dict), "root must be object")
+    for k in ["header", "summary", "skills", "experience", "education"]:
+        expect(k in data, f"missing key {k}")
+    expect(isinstance(data["header"], dict), "header must be object")
+    expect(isinstance(data["summary"], str), "summary must be string")
+    expect(isinstance(data["skills"], list), "skills must be array")
+    expect(isinstance(data["experience"], list), "experience must be array")
+    expect(isinstance(data["education"], list), "education must be array")
+    for exp in data.get("experience", []):
+        expect(isinstance(exp, dict), "experience entry must be object")
+        expect("bullets" in exp and isinstance(exp["bullets"], list), "experience.bullets must be array")
+
+
+def _append_event(job_id: str, user_id: str, action: str, meta: Optional[Dict[str, Any]] = None) -> None:
+    if table is None:
+        return
+    ev = {"ts": int(time.time()), "userId": user_id, "action": action, "meta": meta or {}}
+    try:
+        table.update_item(
+            Key={"jobId": job_id},
+            UpdateExpression="SET events = list_append(if_not_exists(events, :empty), :e)",
+            ExpressionAttributeValues={":e": [ev], ":empty": []},
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.error("Failed to append event for job %s: %s", job_id, exc)
+

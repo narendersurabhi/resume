@@ -25,11 +25,13 @@ ENABLE_LLM = os.getenv("ENABLE_LLM", "false").lower() in ("1", "true", "yes")
 ALLOWED_OPENAI = set((os.getenv("ALLOWED_OPENAI_MODELS", "*").split(",")))
 ALLOWED_BEDROCK = set((os.getenv("ALLOWED_BEDROCK_MODELS", "anthropic.claude-3-5-sonnet-2024-06-20").split(",")))
 BEDROCK_REGION = os.getenv("BEDROCK_REGION", os.getenv("AWS_REGION", "us-east-1"))
+TAILOR_WORKER_FN = os.getenv("TAILOR_WORKER_FN", "")
 
 s3 = boto3.client("s3")
 dynamodb = boto3.resource("dynamodb")
 secrets = boto3.client("secretsmanager")
 bedrock = boto3.client("bedrock-runtime", region_name=BEDROCK_REGION)
+lambda_client = boto3.client("lambda")
 table = dynamodb.Table(TABLE_NAME) if TABLE_NAME else None
 
 logger = logging.getLogger(__name__)
@@ -419,13 +421,10 @@ def handler(event, context):
         if not S3_BUCKET or not TABLE_NAME:
             return _json_response(500, {"ok": False, "error": "Service not configured (bucket/table)"})
 
-        # Persist inputs to S3
         ts = int(time.time())
         base_prefix = f"resume-jobs/{user_id}/{job_id}"
         inputs_prefix = f"{base_prefix}/inputs"
-        outputs_prefix = f"{base_prefix}/outputs"
 
-        # Resolve resume text: prefer resumeKey (DOCX in storage), else inline text
         if resume_key:
             if not STORAGE_BUCKET:
                 return _json_response(400, {"ok": False, "error": "Storage bucket not configured for resumeKey"})
@@ -440,7 +439,6 @@ def handler(event, context):
             s3.put_object(Bucket=S3_BUCKET, Key=f"{inputs_prefix}/reference-resume.txt", Body=resume_text.encode("utf-8"))
             resume_s3 = {"bucket": S3_BUCKET, "key": f"{inputs_prefix}/reference-resume.txt"}
 
-        # Resolve job description: prefer jobKey (DOCX in storage), else inline text
         if job_key:
             if not STORAGE_BUCKET:
                 return _json_response(400, {"ok": False, "error": "Storage bucket not configured for jobKey"})
@@ -460,73 +458,83 @@ def handler(event, context):
         if not job_desc:
             return _json_response(400, {"ok": False, "error": "Job description not provided (jobKey or jobDescription required)"})
 
-        # Generate normalized JSON via selected provider (or fallback to stub)
-        if ENABLE_LLM and (resume_text or job_desc):
-            prov, mdl = _choose_provider(provider, model)
-            if prov == "openai":
-                normalized = _call_openai(mdl, resume_text, job_desc)
-            elif prov == "bedrock":
-                normalized = _call_bedrock(mdl, resume_text, job_desc)
-            else:
-                raise ValueError("Unsupported provider")
-        else:
-            normalized = {
-                "header": {"name": "", "title": "", "contact": ""},
-                "summary": "",
-                "skills": [],
-                "experience": [],
-                "education": [],
-                "extras": {},
-            }
+        provider, model = _choose_provider(provider, model)
+        tenant_id = body.get("tenantId") or "demo-tenant"
+        auto_render = bool(body.get("autoRender"))
+        auto_render_template = body.get("autoRenderTemplateKey") or body.get("templateKey")
 
-        try:
-            _validate_resume_json(normalized)
-        except Exception as ve:
-            return _json_response(400, {"ok": False, "error": str(ve)})
+        inputs: Dict[str, Any] = {}
+        if resume_s3:
+            inputs["resume"] = resume_s3
+        if jd_s3:
+            inputs["jobDesc"] = jd_s3
 
-        # Basic cache: if content identical exists, reuse key path
-        json_key = f"{outputs_prefix}/tailored.json"
-        s3.put_object(Bucket=S3_BUCKET, Key=json_key, Body=json.dumps(normalized, ensure_ascii=False, indent=2).encode("utf-8"))
-
-        json_url = _presign(S3_BUCKET, json_key)
-
-        # Record job in DynamoDB
         if table is not None:
             item = {
                 "jobId": job_id,
                 "userId": user_id,
+                "tenantId": tenant_id,
                 "createdAt": ts,
                 "provider": provider,
                 "model": model,
-                "inputs": {"resume": resume_s3, "jobDesc": jd_s3},
-                "outputs": {"json": {"bucket": S3_BUCKET, "key": json_key}},
-                "status": "generated",
-                "versions": [
-                    {
-                        "versionId": "v1",
-                        "createdAt": ts,
-                        "json": {"bucket": S3_BUCKET, "key": json_key},
-                        "scores": None,
-                        "accepted": False,
-                    }
-                ],
+                "inputs": inputs,
+                "outputs": {},
+                "status": "processing",
             }
-            # Create share token on first create
+            if auto_render and auto_render_template:
+                item["autoRenderTemplateKey"] = auto_render_template
             item["shareToken"] = uuid.uuid4().hex[:16]
             table.put_item(Item=item)
-            _append_event(job_id, user_id, "generated", {"provider": provider, "model": model})
+            _append_event(job_id, user_id, "queued", {"provider": provider, "model": model})
 
-        return _json_response(
-            200,
-            {
-                "ok": True,
-                "jobId": job_id,
-                "jsonS3": {"bucket": S3_BUCKET, "key": json_key},
-                "urls": {"json": json_url},
-                "provider": provider,
-                "model": model,
-            },
-        )
+        worker_fn = os.getenv("TAILOR_WORKER_FN")
+        if not worker_fn:
+            if table is not None:
+                table.update_item(
+                    Key={"jobId": job_id},
+                    UpdateExpression="SET #s=:st, errorMessage=:err, updatedAt=:ts",
+                    ExpressionAttributeNames={"#s": "status"},
+                    ExpressionAttributeValues={":st": "failed", ":err": "worker function not configured", ":ts": ts},
+                )
+            return _json_response(500, {"ok": False, "error": "Tailor worker not configured"})
+
+        message = {
+            "action": "tailor",
+            "jobId": job_id,
+            "userId": user_id,
+            "tenantId": tenant_id,
+            "provider": provider,
+            "model": model,
+            "resumeText": resume_text,
+            "jobDescription": job_desc,
+            "resumeKey": resume_key,
+            "jobKey": job_key,
+        }
+        if resume_s3:
+            message["resumeS3"] = resume_s3
+        if jd_s3:
+            message["jobDescS3"] = jd_s3
+        if auto_render and auto_render_template:
+            message["autoRenderTemplateKey"] = auto_render_template
+
+        try:
+            lambda_client.invoke(
+                FunctionName=worker_fn,
+                InvocationType="Event",
+                Payload=json.dumps(message).encode("utf-8"),
+            )
+        except Exception as exc:  # noqa: BLE001
+            logger.error("Failed to invoke tailor worker for job %s: %s", job_id, exc)
+            if table is not None:
+                table.update_item(
+                    Key={"jobId": job_id},
+                    UpdateExpression="SET #s=:st, errorMessage=:err, updatedAt=:ts",
+                    ExpressionAttributeNames={"#s": "status"},
+                    ExpressionAttributeValues={":st": "failed", ":err": str(exc), ":ts": ts},
+                )
+            return _json_response(500, {"ok": False, "error": "Failed to queue tailor job"})
+
+        return _json_response(202, {"ok": True, "jobId": job_id, "status": "processing"})
 
     except Exception as e:
         return _json_response(400, {"ok": False, "error": str(e)})
