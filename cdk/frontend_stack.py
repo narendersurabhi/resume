@@ -140,7 +140,8 @@ def handler(event, context):
             sources=[s3deploy.Source.asset("frontend/dist", exclude=["config.json"])],
             destination_bucket=site_bucket,
             distribution=distribution,
-            distribution_paths=["/*"],
+            # Invalidate only frequently-changing files to avoid long waits/backlogs
+            distribution_paths=["/index.html", "/config.json"],
         )
         deploy.node.add_dependency(distribution)
 
