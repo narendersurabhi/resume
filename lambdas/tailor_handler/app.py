@@ -406,6 +406,11 @@ def handler(event, context):
                     revised = _call_bedrock(mdl, resume_text, job_desc)
             else:
                 revised = base_json
+            # Coerce and validate schema to avoid brittle model outputs
+            try:
+                revised = _coerce_resume_json(revised)
+            except Exception:
+                pass
             try:
                 _validate_resume_json(revised)
             except Exception as ve:

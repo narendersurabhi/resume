@@ -153,7 +153,7 @@ def _process_tailor(message: Dict[str, Any]) -> Dict[str, Any]:
             "education": [],
             "extras": {},
         }
-    normalized = _coerce_resume_json(normalized)
+
     _validate_resume_json(normalized)
 
     ts = int(time.time())
@@ -395,60 +395,11 @@ def _system_prompt() -> str:
 
 def _user_prompt(resume_text: str, job_desc: str) -> str:
     return (
-        f"Resume:\
-{resume_text}\
-\
-Job Description:\
-{job_desc}\
-\
-"
+        f"Resume:\\n{resume_text}\\n\\nJob Description:\\n{job_desc}\\n\\n"
         "Return JSON with keys: header{name,title,contact}, summary, skills[], "
         "experience[{ company,title,start,end,bullets[] }], education[{ school,degree,year }], extras? (object). No markdown."
     )
 
-
-
-def _coerce_resume_json(data: Any) -> Dict[str, Any]:
-    """Make a best-effort to coerce arbitrary data into our expected resume JSON shape."""
-    result: Dict[str, Any] = {}
-    src = data if isinstance(data, dict) else {}
-
-    # header
-    header = src.get("header") if isinstance(src.get("header"), dict) else {}
-    name = header.get("name") if isinstance(header.get("name"), str) else ""
-    title = header.get("title") if isinstance(header.get("title"), str) else ""
-    contact = header.get("contact") if isinstance(header.get("contact"), str) else ""
-    result["header"] = {"name": name, "title": title, "contact": contact}
-
-    # summary
-    result["summary"] = src.get("summary") if isinstance(src.get("summary"), str) else ""
-
-    # skills (list[str])
-    skills = src.get("skills") if isinstance(src.get("skills"), list) else []
-    result["skills"] = [s for s in skills if isinstance(s, (str, int, float))]
-    result["skills"] = [str(s) for s in result["skills"]]
-
-    # experience (list[dict]) with bullets list
-    exp_list = src.get("experience") if isinstance(src.get("experience"), list) else []
-    norm_exp: List[Dict[str, Any]] = []
-    for e in exp_list:
-        if not isinstance(e, dict):
-            continue
-        item = dict(e)
-        bullets = item.get("bullets") if isinstance(item.get("bullets"), list) else []
-        item["bullets"] = [b for b in bullets if isinstance(b, (str, int, float))]
-        item["bullets"] = [str(b) for b in item["bullets"]]
-        norm_exp.append(item)
-    result["experience"] = norm_exp
-
-    # education (list[dict])
-    edu_list = src.get("education") if isinstance(src.get("education"), list) else []
-    result["education"] = [e for e in edu_list if isinstance(e, dict)]
-
-    # extras (object)
-    result["extras"] = src.get("extras") if isinstance(src.get("extras"), dict) else {}
-
-    return result
 
 def _validate_resume_json(data: Dict[str, Any]) -> None:
     def expect(cond: bool, msg: str):
@@ -481,7 +432,4 @@ def _append_event(job_id: str, user_id: str, action: str, meta: Optional[Dict[st
         )
     except Exception as exc:  # noqa: BLE001
         logger.error("Failed to append event for job %s: %s", job_id, exc)
-
-
-
 
