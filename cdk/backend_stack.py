@@ -156,8 +156,6 @@ class BackendStack(Stack):
         table.grant_read_write_data(upload_function)
         table.grant_read_write_data(generate_function)
         table.grant_read_data(download_function)
-        table.grant_read_data(tailor_fn)
-        table.grant_read_data(tailor_worker)
 
         generate_function.add_to_role_policy(iam.PolicyStatement(actions=["bedrock:InvokeModel"], resources=[f"arn:aws:bedrock:{self.region}::foundation-model/openai.gpt-oss-120b-1:0"]))
 
@@ -306,6 +304,8 @@ class BackendStack(Stack):
 
         tailor_worker.grant_invoke(tailor_fn)
         tailor_fn.add_environment("TAILOR_WORKER_FN", tailor_worker.function_name)
+        table.grant_read_data(tailor_fn)
+        table.grant_read_data(tailor_worker)
 
         # Templates bucket for DOCX templates
         templates_bucket = s3.Bucket(
