@@ -249,7 +249,7 @@ class BackendStack(Stack):
                 "STORAGE_BUCKET": bucket.bucket_name,
             },
             memory_size=512,
-            timeout=Duration.seconds(30),
+            timeout=Duration.seconds(90),
             log_retention=logs.RetentionDays.ONE_WEEK,
         )
 
