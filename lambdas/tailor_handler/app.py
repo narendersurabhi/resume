@@ -209,7 +209,6 @@ def _call_openai(model: str, resume_text: str, job_desc: str) -> Dict[str, Any]:
             {"role": "user", "content": _user_prompt(resume_text, job_desc)},
         ],
         "max_output_tokens": 1200,
-        "temperature": 0.3,
     }
 
     key = _get_openai_key()

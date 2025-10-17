@@ -264,7 +264,6 @@ def _call_openai(model: str, resume_text: str, job_desc: str) -> Dict[str, Any]:
         ],
         # Bound output to reduce latency risk
         "max_output_tokens": 1200,
-        "temperature": 0.3,
     }
 
     timeouts = [25, 35, 45]
