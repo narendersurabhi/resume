@@ -34,6 +34,22 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
+def _parse_timeouts(defaults: List[int]) -> List[int]:
+    """Parse comma-separated OPENAI_TIMEOUTS env into a list of ints (seconds)."""
+    raw = (os.getenv("OPENAI_TIMEOUTS") or "").strip()
+    if not raw:
+        return defaults
+    out: List[int] = []
+    for tok in raw.split(","):
+        try:
+            v = int(tok.strip())
+            if v > 0:
+                out.append(v)
+        except Exception:
+            continue
+    return out or defaults
+
+
 def handler(event, context):
     messages: List[Dict[str, Any]] = []
     if isinstance(event, str):
@@ -266,7 +282,8 @@ def _call_openai(model: str, resume_text: str, job_desc: str) -> Dict[str, Any]:
         "max_output_tokens": 1200,
     }
 
-    timeouts = [25, 35, 45]
+    # In the worker we allow longer waits by default; override via OPENAI_TIMEOUTS
+    timeouts = _parse_timeouts([60, 90, 120, 180])
     last_err = None
     for attempt, tmo in enumerate(timeouts, start=1):
         req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"))
