@@ -245,6 +245,7 @@ class BackendStack(Stack):
                 "MODEL_PROVIDER": "openai",
                 "MODEL_ID": "gpt-5-pro",
                 "OPENAI_PROJECT": "proj_rHvrAwby02gARWlZwjSSbHvV",
+                "ENABLE_LLM": "true",
                 "STORAGE_BUCKET": bucket.bucket_name,
             },
             memory_size=512,
