@@ -460,7 +460,7 @@ const Dashboard = ({ apiUrl, userId, userGroups }) => {
                     <p className="font-semibold">Job {job.jobId}</p>
                     <p className="text-xs text-slate-400">User: {job.userId}</p>
                     <p className="text-xs text-slate-400">Status: {job.status}</p>
-                    <p className="text-xs text-slate-400">Provider: {job.provider} · Model: {job.model}</p>
+                    <p className="text-xs text-slate-400">Provider: {job.provider} | Model: {job.model}</p>
                     {job.shareToken && (
                       <p className="text-xs text-slate-500">Share token: {job.shareToken}</p>
                     )}
@@ -591,3 +591,4 @@ const Dashboard = ({ apiUrl, userId, userGroups }) => {
 };
 
 export default Dashboard;
+
