@@ -11,7 +11,7 @@ import urllib.request
 import urllib.error
 from xml.etree import ElementTree as ET
 
-S3_BUCKET = os.getenv("JOBS_BUCKET", "")
+JOBS_BUCKET = os.getenv("JOBS_BUCKET", "")
 TABLE_NAME = os.getenv("JOBS_TABLE", "")
 STORAGE_BUCKET = os.getenv("STORAGE_BUCKET", "")
 DEFAULT_PROVIDER = os.getenv("MODEL_PROVIDER", "openai")
@@ -355,4 +355,3 @@ def _append_event(job_id: str, user_id: str, action: str, meta: Optional[Dict[st
         )
     except Exception as exc:  # noqa: BLE001
         logger.error("Failed to append event for job %s: %s", job_id, exc)
-
