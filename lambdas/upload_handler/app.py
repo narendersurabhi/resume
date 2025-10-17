@@ -54,18 +54,29 @@ def handler(event: Dict[str, Any], _context: Any) -> Dict[str, Any]:
         file_category = payload.get("category", "approved")
         file_name = payload["fileName"]
         content_b64 = payload["content"]
-        tags = payload.get("tags", {})
+        tags = dict(payload.get("tags", {}))
+        user_id = payload.get("userId")
     except (json.JSONDecodeError, KeyError) as exc:
         return _response(400, {"message": f"Invalid request: {exc}"})
 
+    if file_category == "schema" and not user_id:
+        return _response(400, {"message": "Schema uploads require an authenticated user"})
+
+    if user_id and "userId" not in tags:
+        tags["userId"] = user_id
+
     content = base64.b64decode(content_b64)
     object_key = f"{tenant_id}/{file_category}/{uuid.uuid4()}-{file_name}"
+
+    metadata = {"tenantId": tenant_id, **{str(k): str(v) for k, v in tags.items()}}
+    if user_id:
+        metadata["userId"] = str(user_id)
 
     s3.put_object(
         Bucket=BUCKET_NAME,
         Key=object_key,
         Body=content,
-        Metadata={"tenantId": tenant_id, **{str(k): str(v) for k, v in tags.items()}},
+        Metadata=metadata,
     )
 
     table = dynamodb.Table(TABLE_NAME)
@@ -77,6 +88,8 @@ def handler(event: Dict[str, Any], _context: Any) -> Dict[str, Any]:
         "createdAt": datetime.now(timezone.utc).isoformat(),
         "tags": tags,
     }
+    if user_id:
+        item["userId"] = user_id
     table.put_item(Item=item)
 
     return _response(200, {"message": "Upload successful", "key": object_key})

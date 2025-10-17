@@ -315,7 +315,7 @@ const Dashboard = ({ apiUrl, userId, userGroups }) => {
       </section>
 
       <section className="grid gap-6 lg:grid-cols-3">
-        <UploadForm apiUrl={apiUrl} tenantId={tenantId} onUploadComplete={handleUploadComplete} />
+        <UploadForm apiUrl={apiUrl} tenantId={tenantId} userId={userId} onUploadComplete={handleUploadComplete} />
         <div className="space-y-4">
           <ResumeList
             title="Approved Resumes"

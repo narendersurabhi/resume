@@ -138,9 +138,17 @@ def _process_tailor(message: Dict[str, Any]) -> Dict[str, Any]:
     # Enforce per-job wall-clock deadline
     deadline = time.time() + max(10, JOB_TIMEOUT_SECONDS)
 
+    schema_override = message.get("schema") if isinstance(message.get("schema"), dict) else None
+
     if ENABLE_LLM:
         if provider == "openai":
-            normalized = _call_openai(model, resume_text, job_desc, deadline=deadline)
+            normalized = _call_openai(
+                model,
+                resume_text,
+                job_desc,
+                deadline=deadline,
+                schema_override=schema_override,
+            )
         elif provider == "bedrock":
             normalized = _call_bedrock(model, resume_text, job_desc, deadline=deadline)
         else:
@@ -273,7 +281,14 @@ def _get_openai_key() -> str:
         return os.getenv("OPENAI_API_KEY", "")
 
 
-def _call_openai(model: str, resume_text: str, job_desc: str, *, deadline: Optional[float] = None) -> Dict[str, Any]:
+def _call_openai(
+    model: str,
+    resume_text: str,
+    job_desc: str,
+    *,
+    deadline: Optional[float] = None,
+    schema_override: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
     key = _get_openai_key()
     if not key:
         raise RuntimeError("OPENAI_API_KEY not configured")
@@ -288,12 +303,21 @@ def _call_openai(model: str, resume_text: str, job_desc: str, *, deadline: Optio
         "max_output_tokens": 1200,
     }
 
-    def _with_response_format(payload: Dict[str, Any], include: bool) -> Dict[str, Any]:
+    def _with_response_format(payload: Dict[str, Any], include: bool, schema: Optional[Dict[str, Any]]) -> Dict[str, Any]:
         if not include:
             cp = dict(payload)
             cp.pop("response_format", None)
             return cp
-        if OPENAI_JSON_MODE == "object":
+        if schema:
+            rf = {
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "ResumeSchema",
+                    "strict": True,
+                    "schema": schema,
+                },
+            }
+        elif OPENAI_JSON_MODE == "object":
             rf = {"type": "json_object"}
         else:
             rf = {
@@ -341,13 +365,13 @@ def _call_openai(model: str, resume_text: str, job_desc: str, *, deadline: Optio
         return cp
 
     prefer_json_mode = (OPENAI_JSON_MODE != "off") and (model.lower().startswith("gpt-5") or OPENAI_JSON_MODE in ("schema", "object"))
-    include_format = bool(prefer_json_mode)
+    include_format = bool(prefer_json_mode or schema_override)
 
     # In the worker we allow longer waits by default; override via OPENAI_TIMEOUTS
     timeouts = _parse_timeouts([60, 90, 120, 180])
     last_err = None
     for attempt, tmo in enumerate(timeouts, start=1):
-        payload = _with_response_format(base_payload, include_format)
+        payload = _with_response_format(base_payload, include_format, schema_override)
         if deadline is not None:
             remaining = int(deadline - time.time())
             if remaining <= 5:
@@ -375,6 +399,7 @@ def _call_openai(model: str, resume_text: str, job_desc: str, *, deadline: Optio
             if err.code == 400 and include_format and ("response_format" in detail or "json_schema" in detail or "json_object" in detail) and attempt < len(timeouts):
                 logger.warning("OpenAI 400 on response_format; retrying without response_format")
                 include_format = False
+                schema_override = None
                 continue
             logger.error("OpenAI HTTPError %s: %s", err.code, detail)
             raise RuntimeError(f"OpenAI error {err.code}: {detail}") from err

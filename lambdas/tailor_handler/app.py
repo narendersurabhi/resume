@@ -9,7 +9,7 @@ import boto3
 from botocore.config import Config
 import urllib.request
 import urllib.error
-from boto3.dynamodb.conditions import Attr
+from boto3.dynamodb.conditions import Attr, Key
 import io
 import zipfile
 from xml.etree import ElementTree as ET
@@ -28,6 +28,7 @@ ALLOWED_OPENAI = set((os.getenv("ALLOWED_OPENAI_MODELS", "*").split(",")))
 ALLOWED_BEDROCK = set((os.getenv("ALLOWED_BEDROCK_MODELS", "anthropic.claude-3-5-sonnet-2024-06-20").split(",")))
 BEDROCK_REGION = os.getenv("BEDROCK_REGION", os.getenv("AWS_REGION", "us-east-1"))
 TAILOR_WORKER_FN = os.getenv("TAILOR_WORKER_FN", "")
+METADATA_TABLE = os.getenv("METADATA_TABLE", "")
 
 s3 = boto3.client("s3")
 dynamodb = boto3.resource("dynamodb")
@@ -35,6 +36,7 @@ secrets = boto3.client("secretsmanager")
 bedrock = boto3.client("bedrock-runtime", region_name=BEDROCK_REGION)
 lambda_client = boto3.client("lambda")
 table = dynamodb.Table(TABLE_NAME) if TABLE_NAME else None
+metadata_table = dynamodb.Table(METADATA_TABLE) if METADATA_TABLE else None
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -108,6 +110,70 @@ def _presign(bucket: str, key: str, expires: int = 900) -> str:
         Params={"Bucket": bucket, "Key": key},
         ExpiresIn=expires,
     )
+
+
+def _default_resume_json_schema() -> Dict[str, Any]:
+    return {
+        "type": "object",
+        "properties": {
+            "header": {
+                "type": "object",
+                "properties": {
+                    "name": {"type": "string"},
+                    "title": {"type": "string"},
+                    "contact": {"type": "string"},
+                },
+                "required": ["name", "title", "contact"],
+            },
+            "summary": {"type": "string"},
+            "skills": {"type": "array", "items": {"type": "string"}},
+            "experience": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "company": {"type": "string"},
+                        "title": {"type": "string"},
+                        "start": {"type": "string"},
+                        "end": {"type": "string"},
+                        "bullets": {"type": "array", "items": {"type": "string"}},
+                    },
+                    "required": ["bullets"],
+                },
+            },
+            "education": {"type": "array", "items": {"type": "object"}},
+            "extras": {"type": "object"},
+        },
+        "required": ["header", "summary", "skills", "experience", "education"],
+    }
+
+
+def _load_user_schema(user_id: Optional[str], tenant_id: str) -> Optional[Dict[str, Any]]:
+    if not user_id or not metadata_table or not STORAGE_BUCKET:
+        return None
+    try:
+        resp = metadata_table.query(
+            KeyConditionExpression=Key("tenantId").eq(tenant_id),
+            FilterExpression=Attr("category").eq("schema") & Attr("userId").eq(user_id),
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Failed to query schema for user %s: %s", user_id, exc)
+        return None
+
+    items = resp.get("Items") or []
+    if not items:
+        return None
+    items.sort(key=lambda item: item.get("createdAt", ""), reverse=True)
+    key = items[0].get("resourceId")
+    if not key:
+        return None
+    try:
+        obj = s3.get_object(Bucket=STORAGE_BUCKET, Key=key)
+        body = obj["Body"].read().decode("utf-8")
+        return json.loads(body)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Failed to load schema %s for user %s: %s", key, user_id, exc)
+        return None
 
 
 def _choose_provider(req_provider: Optional[str], req_model: Optional[str]) -> Tuple[str, str]:
@@ -201,7 +267,12 @@ def _list_openai_models() -> List[str]:
     return sorted(set(models))
 
 
-def _call_openai(model: str, resume_text: str, job_desc: str) -> Dict[str, Any]:
+def _call_openai(
+    model: str,
+    resume_text: str,
+    job_desc: str,
+    schema_override: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
     url = "https://api.openai.com/v1/responses"
     base_payload: Dict[str, Any] = {
         "model": model,
@@ -221,53 +292,26 @@ def _call_openai(model: str, resume_text: str, job_desc: str) -> Dict[str, Any]:
     logger.info("OpenAI /responses model=%s project_set=%s", model, proj_set)
 
     prefer_json_mode = (OPENAI_JSON_MODE != "off") and (model.lower().startswith("gpt-5") or OPENAI_JSON_MODE in ("schema", "object"))
-    include_format = bool(prefer_json_mode)
+    include_format = bool(schema_override or prefer_json_mode)
 
     timeouts = [25, 35, 45]
     for attempt, tmo in enumerate(timeouts, start=1):
         payload = dict(base_payload)
         if include_format:
-            if OPENAI_JSON_MODE == "object":
+            if schema_override and isinstance(schema_override, dict):
+                schema = schema_override
+            elif OPENAI_JSON_MODE == "object":
                 payload["response_format"] = {"type": "json_object"}
+                schema = None
             else:
+                schema = _default_resume_json_schema()
+            if schema:
                 payload["response_format"] = {
                     "type": "json_schema",
                     "json_schema": {
                         "name": "ResumeSchema",
                         "strict": True,
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "header": {
-                                    "type": "object",
-                                    "properties": {
-                                        "name": {"type": "string"},
-                                        "title": {"type": "string"},
-                                        "contact": {"type": "string"},
-                                    },
-                                    "required": ["name", "title", "contact"],
-                                },
-                                "summary": {"type": "string"},
-                                "skills": {"type": "array", "items": {"type": "string"}},
-                                "experience": {
-                                    "type": "array",
-                                    "items": {
-                                        "type": "object",
-                                        "properties": {
-                                            "company": {"type": "string"},
-                                            "title": {"type": "string"},
-                                            "start": {"type": "string"},
-                                            "end": {"type": "string"},
-                                            "bullets": {"type": "array", "items": {"type": "string"}},
-                                        },
-                                        "required": ["bullets"],
-                                    },
-                                },
-                                "education": {"type": "array", "items": {"type": "object"}},
-                                "extras": {"type": "object"},
-                            },
-                            "required": ["header", "summary", "skills", "experience", "education"],
-                        },
+                        "schema": schema,
                     },
                 }
 
@@ -291,6 +335,7 @@ def _call_openai(model: str, resume_text: str, job_desc: str) -> Dict[str, Any]:
             if err.code == 400 and include_format and ("response_format" in detail or "json_schema" in detail or "json_object" in detail) and attempt < len(timeouts):
                 logger.warning("OpenAI 400 on response_format; retrying without response_format")
                 include_format = False
+                schema_override = None
                 continue
             logger.error("OpenAI HTTPError %s: %s", err.code, detail)
             raise RuntimeError(f"OpenAI error {err.code}: {detail}") from err
@@ -456,13 +501,15 @@ def handler(event, context):
             job_id = body.get("jobId") or uuid.uuid4().hex
             # Always derive user_id from the authenticated token
             user_id = (claim_user or "anonymous").strip() or "anonymous"
+            tenant_id_refine = body.get("tenantId") or "demo-tenant"
+            user_schema = _load_user_schema(user_id, tenant_id_refine)
             prov, mdl = _choose_provider(body.get("provider"), body.get("model"))
             # In a simple scaffold, append feedback to summary or bullets; if LLM enabled, ask model to revise
             if ENABLE_LLM:
                 resume_text = json.dumps(base_json)
                 job_desc = json.dumps(feedback)
                 if prov == "openai":
-                    revised = _call_openai(mdl, resume_text, job_desc)
+                    revised = _call_openai(mdl, resume_text, job_desc, schema_override=user_schema)
                 else:
                     revised = _call_bedrock(mdl, resume_text, job_desc)
             else:
@@ -542,6 +589,7 @@ def handler(event, context):
 
             provider, model = _choose_provider(provider, model)
             tenant_id = body.get("tenantId") or "demo-tenant"
+            user_schema = _load_user_schema(user_id, tenant_id)
             auto_render = bool(body.get("autoRender"))
             auto_render_template = body.get("autoRenderTemplateKey") or body.get("templateKey")
 
@@ -565,6 +613,8 @@ def handler(event, context):
                 }
                 if auto_render and auto_render_template:
                     item["autoRenderTemplateKey"] = auto_render_template
+                if user_schema:
+                    item["schemaUsed"] = True
                 item["shareToken"] = uuid.uuid4().hex[:16]
                 table.put_item(Item=item)
                 _append_event(job_id, user_id, "queued", {"provider": provider, "model": model})
@@ -599,6 +649,8 @@ def handler(event, context):
                 message["jobDescS3"] = jd_s3
             if auto_render and auto_render_template:
                 message["autoRenderTemplateKey"] = auto_render_template
+            if user_schema:
+                message["schema"] = user_schema
 
             # Use a short read timeout for sync path to avoid API Gateway 29s limit
             lambda_client_sync = boto3.client(
@@ -736,6 +788,7 @@ def handler(event, context):
 
         provider, model = _choose_provider(provider, model)
         tenant_id = body.get("tenantId") or "demo-tenant"
+        user_schema = _load_user_schema(user_id, tenant_id)
         auto_render = bool(body.get("autoRender"))
         auto_render_template = body.get("autoRenderTemplateKey") or body.get("templateKey")
 
@@ -759,6 +812,8 @@ def handler(event, context):
             }
             if auto_render and auto_render_template:
                 item["autoRenderTemplateKey"] = auto_render_template
+            if user_schema:
+                item["schemaUsed"] = True
             item["shareToken"] = uuid.uuid4().hex[:16]
             table.put_item(Item=item)
             _append_event(job_id, user_id, "queued", {"provider": provider, "model": model})
@@ -792,6 +847,8 @@ def handler(event, context):
             message["jobDescS3"] = jd_s3
         if auto_render and auto_render_template:
             message["autoRenderTemplateKey"] = auto_render_template
+        if user_schema:
+            message["schema"] = user_schema
 
         try:
             lambda_client.invoke(
