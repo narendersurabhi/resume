@@ -205,7 +205,6 @@ def _call_openai(model: str, resume_text: str, job_desc: str) -> Dict[str, Any]:
             {"role": "system", "content": _system_prompt()},
             {"role": "user", "content": _user_prompt(resume_text, job_desc)},
         ],
-        "temperature": 0.4,
     }
 
     req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"))
