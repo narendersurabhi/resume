@@ -8,6 +8,7 @@ import zipfile
 from typing import Any, Dict, Optional, Tuple, List
 
 import boto3
+from botocore.config import Config
 import urllib.request
 import urllib.error
 from xml.etree import ElementTree as ET
@@ -23,6 +24,7 @@ ENABLE_LLM = os.getenv("ENABLE_LLM", "false").lower() in ("1", "true", "yes")
 ALLOWED_OPENAI = set((os.getenv("ALLOWED_OPENAI_MODELS", "*").split(",")))
 ALLOWED_BEDROCK = set((os.getenv("ALLOWED_BEDROCK_MODELS", "anthropic.claude-3-5-sonnet-2024-06-20").split(",")))
 BEDROCK_REGION = os.getenv("BEDROCK_REGION", os.getenv("AWS_REGION", "us-east-1"))
+JOB_TIMEOUT_SECONDS = int(os.getenv("JOB_TIMEOUT_SECONDS", "600") or "600")
 
 s3 = boto3.client("s3")
 dynamodb = boto3.resource("dynamodb")
@@ -132,11 +134,14 @@ def _process_tailor(message: Dict[str, Any]) -> Dict[str, Any]:
     if not resume_text or not job_desc:
         raise ValueError("Resume text and job description are required")
 
+    # Enforce per-job wall-clock deadline
+    deadline = time.time() + max(10, JOB_TIMEOUT_SECONDS)
+
     if ENABLE_LLM:
         if provider == "openai":
-            normalized = _call_openai(model, resume_text, job_desc)
+            normalized = _call_openai(model, resume_text, job_desc, deadline=deadline)
         elif provider == "bedrock":
-            normalized = _call_bedrock(model, resume_text, job_desc)
+            normalized = _call_bedrock(model, resume_text, job_desc, deadline=deadline)
         else:
             raise ValueError("Unsupported provider")
     else:
@@ -267,7 +272,7 @@ def _get_openai_key() -> str:
         return os.getenv("OPENAI_API_KEY", "")
 
 
-def _call_openai(model: str, resume_text: str, job_desc: str) -> Dict[str, Any]:
+def _call_openai(model: str, resume_text: str, job_desc: str, *, deadline: Optional[float] = None) -> Dict[str, Any]:
     key = _get_openai_key()
     if not key:
         raise RuntimeError("OPENAI_API_KEY not configured")
@@ -286,6 +291,11 @@ def _call_openai(model: str, resume_text: str, job_desc: str) -> Dict[str, Any]:
     timeouts = _parse_timeouts([60, 90, 120, 180])
     last_err = None
     for attempt, tmo in enumerate(timeouts, start=1):
+        if deadline is not None:
+            remaining = int(deadline - time.time())
+            if remaining <= 5:
+                raise RuntimeError("Job timed out before OpenAI call could complete")
+            tmo = min(tmo, remaining)
         req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"))
         req.add_header("Authorization", f"Bearer {key}")
         req.add_header("Content-Type", "application/json")
@@ -342,7 +352,7 @@ def _call_openai(model: str, resume_text: str, job_desc: str) -> Dict[str, Any]:
         raise RuntimeError(f"OpenAI response was not valid JSON: {err}") from err
 
 
-def _call_bedrock(model: str, resume_text: str, job_desc: str) -> Dict[str, Any]:
+def _call_bedrock(model: str, resume_text: str, job_desc: str, *, deadline: Optional[float] = None) -> Dict[str, Any]:
     body = {
         "anthropic_version": "bedrock-2023-05-31",
         "max_tokens": 1500,
@@ -352,7 +362,17 @@ def _call_bedrock(model: str, resume_text: str, job_desc: str) -> Dict[str, Any]
             {"role": "user", "content": [{"type": "text", "text": _user_prompt(resume_text, job_desc)}]}
         ],
     }
-    result = bedrock.invoke_model(
+    client = bedrock
+    if deadline is not None:
+        remaining = int(deadline - time.time())
+        if remaining <= 5:
+            raise RuntimeError("Job timed out before Bedrock call could start")
+        client = boto3.client(
+            "bedrock-runtime",
+            region_name=BEDROCK_REGION,
+            config=Config(read_timeout=remaining, connect_timeout=3, retries={"max_attempts": 2}),
+        )
+    result = client.invoke_model(
         modelId=model,
         body=json.dumps(body),
         accept="application/json",

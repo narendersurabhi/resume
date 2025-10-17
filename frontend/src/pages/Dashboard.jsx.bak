@@ -17,14 +17,8 @@ const Dashboard = ({ apiUrl, userId, userGroups }) => {
   const [jobsLoading, setJobsLoading] = useState(false);
   const [jobsError, setJobsError] = useState(null);
   const [selectedJob, setSelectedJob] = useState(null);
-  
-  // Retry UI state
-  const [retryProvider, setRetryProvider] = useState('openai');
-  const [retryModel, setRetryModel] = useState('gpt-5-mini');
-  const [retryModels, setRetryModels] = useState(['gpt-5-mini']);
-  const [retryBusy, setRetryBusy] = useState(false);
-  const [retryMsg, setRetryMsg] = useState(null);
-  const [retryErr, setRetryErr] = useState(null);
+  const [renderingJobId, setRenderingJobId] = useState(null);
+  const [detailsTemplate, setDetailsTemplate] = useState(null);
 
   const fileInputRef = useRef();
   const templateFileInputRef = useRef();
@@ -597,7 +591,5 @@ const Dashboard = ({ apiUrl, userId, userGroups }) => {
 };
 
 export default Dashboard;
-
-
 
 
