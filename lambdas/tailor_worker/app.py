@@ -20,6 +20,7 @@ DEFAULT_PROVIDER = os.getenv("MODEL_PROVIDER", "openai")
 DEFAULT_MODEL = os.getenv("MODEL_ID", "gpt-5-pro")
 OPENAI_SECRET_NAME = os.getenv("OPENAI_SECRET_NAME", "openai/api-key")
 OPENAI_PROJECT = os.getenv("OPENAI_PROJECT", "").strip()
+OPENAI_JSON_MODE = (os.getenv("OPENAI_JSON_MODE", "schema") or "schema").strip().lower()
 ENABLE_LLM = os.getenv("ENABLE_LLM", "false").lower() in ("1", "true", "yes")
 ALLOWED_OPENAI = set((os.getenv("ALLOWED_OPENAI_MODELS", "*").split(",")))
 ALLOWED_BEDROCK = set((os.getenv("ALLOWED_BEDROCK_MODELS", "anthropic.claude-3-5-sonnet-2024-06-20").split(",")))
@@ -154,7 +155,7 @@ def _process_tailor(message: Dict[str, Any]) -> Dict[str, Any]:
             "extras": {},
         }
     normalized = _coerce_resume_json(normalized)
-    _validate_resume_json(normalized)
+    _try_validate_resume_json(normalized)
 
     ts = int(time.time())
     json_key = f"resume-jobs/{user_id}/{job_id}/outputs/tailored.json"
@@ -277,7 +278,7 @@ def _call_openai(model: str, resume_text: str, job_desc: str, *, deadline: Optio
     if not key:
         raise RuntimeError("OPENAI_API_KEY not configured")
     url = "https://api.openai.com/v1/responses"
-    payload = {
+    base_payload: Dict[str, Any] = {
         "model": model,
         "input": [
             {"role": "system", "content": _system_prompt()},
@@ -287,10 +288,66 @@ def _call_openai(model: str, resume_text: str, job_desc: str, *, deadline: Optio
         "max_output_tokens": 1200,
     }
 
+    def _with_response_format(payload: Dict[str, Any], include: bool) -> Dict[str, Any]:
+        if not include:
+            cp = dict(payload)
+            cp.pop("response_format", None)
+            return cp
+        if OPENAI_JSON_MODE == "object":
+            rf = {"type": "json_object"}
+        else:
+            rf = {
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "ResumeSchema",
+                    "strict": True,
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "header": {
+                                "type": "object",
+                                "properties": {
+                                    "name": {"type": "string"},
+                                    "title": {"type": "string"},
+                                    "contact": {"type": "string"},
+                                },
+                                "required": ["name", "title", "contact"],
+                            },
+                            "summary": {"type": "string"},
+                            "skills": {"type": "array", "items": {"type": "string"}},
+                            "experience": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "company": {"type": "string"},
+                                        "title": {"type": "string"},
+                                        "start": {"type": "string"},
+                                        "end": {"type": "string"},
+                                        "bullets": {"type": "array", "items": {"type": "string"}},
+                                    },
+                                    "required": ["bullets"],
+                                },
+                            },
+                            "education": {"type": "array", "items": {"type": "object"}},
+                            "extras": {"type": "object"},
+                        },
+                        "required": ["header", "summary", "skills", "experience", "education"],
+                    },
+                },
+            }
+        cp = dict(payload)
+        cp["response_format"] = rf
+        return cp
+
+    prefer_json_mode = (OPENAI_JSON_MODE != "off") and (model.lower().startswith("gpt-5") or OPENAI_JSON_MODE in ("schema", "object"))
+    include_format = bool(prefer_json_mode)
+
     # In the worker we allow longer waits by default; override via OPENAI_TIMEOUTS
     timeouts = _parse_timeouts([60, 90, 120, 180])
     last_err = None
     for attempt, tmo in enumerate(timeouts, start=1):
+        payload = _with_response_format(base_payload, include_format)
         if deadline is not None:
             remaining = int(deadline - time.time())
             if remaining <= 5:
@@ -314,6 +371,10 @@ def _call_openai(model: str, resume_text: str, job_desc: str, *, deadline: Optio
                 logger.warning("OpenAI HTTP %s, retrying in %.2fs (attempt %d/%d)", err.code, sleep, attempt, len(timeouts))
                 time.sleep(sleep)
                 last_err = err
+                continue
+            if err.code == 400 and include_format and ("response_format" in detail or "json_schema" in detail or "json_object" in detail) and attempt < len(timeouts):
+                logger.warning("OpenAI 400 on response_format; retrying without response_format")
+                include_format = False
                 continue
             logger.error("OpenAI HTTPError %s: %s", err.code, detail)
             raise RuntimeError(f"OpenAI error {err.code}: {detail}") from err
@@ -348,8 +409,15 @@ def _call_openai(model: str, resume_text: str, job_desc: str, *, deadline: Optio
     try:
         return json.loads(text)
     except json.JSONDecodeError as err:
-        logger.error("Failed to decode OpenAI JSON: %s | text=%s", err, text)
-        raise RuntimeError(f"OpenAI response was not valid JSON: {err}") from err
+        logger.warning("OpenAI JSON parse failed; returning minimal object: %s", err)
+        return {
+            "header": {"name": "", "title": "", "contact": ""},
+            "summary": text,
+            "skills": [],
+            "experience": [],
+            "education": [],
+            "extras": {},
+        }
 
 
 def _call_bedrock(model: str, resume_text: str, job_desc: str, *, deadline: Optional[float] = None) -> Dict[str, Any]:
@@ -466,6 +534,12 @@ def _validate_resume_json(data: Dict[str, Any]) -> None:
     for exp in data.get("experience", []):
         expect(isinstance(exp, dict), "experience entry must be object")
         expect("bullets" in exp and isinstance(exp["bullets"], list), "experience.bullets must be array")
+
+def _try_validate_resume_json(data: Dict[str, Any]) -> None:
+    try:
+        _validate_resume_json(data)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Schema warning: %s", exc)
 
 
 def _append_event(job_id: str, user_id: str, action: str, meta: Optional[Dict[str, Any]] = None) -> None:

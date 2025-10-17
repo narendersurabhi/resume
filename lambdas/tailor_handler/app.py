@@ -1,4 +1,4 @@
-﻿import json
+import json
 import os
 import uuid
 import time
@@ -22,6 +22,7 @@ DEFAULT_PROVIDER = os.getenv("MODEL_PROVIDER", "openai")
 DEFAULT_MODEL = os.getenv("MODEL_ID", "gpt-5-mini")
 OPENAI_SECRET_NAME = os.getenv("OPENAI_SECRET_NAME", "openai/api-key")
 OPENAI_PROJECT = os.getenv("OPENAI_PROJECT", "").strip()
+OPENAI_JSON_MODE = (os.getenv("OPENAI_JSON_MODE", "schema") or "schema").strip().lower()
 ENABLE_LLM = os.getenv("ENABLE_LLM", "false").lower() in ("1", "true", "yes")
 ALLOWED_OPENAI = set((os.getenv("ALLOWED_OPENAI_MODELS", "*").split(",")))
 ALLOWED_BEDROCK = set((os.getenv("ALLOWED_BEDROCK_MODELS", "anthropic.claude-3-5-sonnet-2024-06-20").split(",")))
@@ -202,7 +203,7 @@ def _list_openai_models() -> List[str]:
 
 def _call_openai(model: str, resume_text: str, job_desc: str) -> Dict[str, Any]:
     url = "https://api.openai.com/v1/responses"
-    payload = {
+    base_payload: Dict[str, Any] = {
         "model": model,
         "input": [
             {"role": "system", "content": _system_prompt()},
@@ -219,8 +220,57 @@ def _call_openai(model: str, resume_text: str, job_desc: str) -> Dict[str, Any]:
         proj_set = True
     logger.info("OpenAI /responses model=%s project_set=%s", model, proj_set)
 
+    prefer_json_mode = (OPENAI_JSON_MODE != "off") and (model.lower().startswith("gpt-5") or OPENAI_JSON_MODE in ("schema", "object"))
+    include_format = bool(prefer_json_mode)
+
     timeouts = [25, 35, 45]
     for attempt, tmo in enumerate(timeouts, start=1):
+        payload = dict(base_payload)
+        if include_format:
+            if OPENAI_JSON_MODE == "object":
+                payload["response_format"] = {"type": "json_object"}
+            else:
+                payload["response_format"] = {
+                    "type": "json_schema",
+                    "json_schema": {
+                        "name": "ResumeSchema",
+                        "strict": True,
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "header": {
+                                    "type": "object",
+                                    "properties": {
+                                        "name": {"type": "string"},
+                                        "title": {"type": "string"},
+                                        "contact": {"type": "string"},
+                                    },
+                                    "required": ["name", "title", "contact"],
+                                },
+                                "summary": {"type": "string"},
+                                "skills": {"type": "array", "items": {"type": "string"}},
+                                "experience": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "company": {"type": "string"},
+                                            "title": {"type": "string"},
+                                            "start": {"type": "string"},
+                                            "end": {"type": "string"},
+                                            "bullets": {"type": "array", "items": {"type": "string"}},
+                                        },
+                                        "required": ["bullets"],
+                                    },
+                                },
+                                "education": {"type": "array", "items": {"type": "object"}},
+                                "extras": {"type": "object"},
+                            },
+                            "required": ["header", "summary", "skills", "experience", "education"],
+                        },
+                    },
+                }
+
         req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"))
         req.add_header("Authorization", f"Bearer {key}")
         req.add_header("Content-Type", "application/json")
@@ -237,6 +287,10 @@ def _call_openai(model: str, resume_text: str, job_desc: str) -> Dict[str, Any]:
                 sleep = (1.5 ** (attempt - 1))
                 logger.warning("OpenAI HTTP %s, retrying in %.2fs (attempt %d/%d)", err.code, sleep, attempt, len(timeouts))
                 time.sleep(sleep)
+                continue
+            if err.code == 400 and include_format and ("response_format" in detail or "json_schema" in detail or "json_object" in detail) and attempt < len(timeouts):
+                logger.warning("OpenAI 400 on response_format; retrying without response_format")
+                include_format = False
                 continue
             logger.error("OpenAI HTTPError %s: %s", err.code, detail)
             raise RuntimeError(f"OpenAI error {err.code}: {detail}") from err
@@ -272,8 +326,15 @@ def _call_openai(model: str, resume_text: str, job_desc: str) -> Dict[str, Any]:
     try:
         return json.loads(text)
     except json.JSONDecodeError as err:
-        logger.error("Failed to decode OpenAI JSON: %s | text=%s", err, text)
-        raise RuntimeError(f"OpenAI response was not valid JSON: {err}") from err
+        logger.warning("Failed to decode OpenAI JSON; returning minimal object: %s", err)
+        return {
+            "header": {"name": "", "title": "", "contact": ""},
+            "summary": text,
+            "skills": [],
+            "experience": [],
+            "education": [],
+            "extras": {},
+        }
 
 
 def _call_bedrock(model: str, resume_text: str, job_desc: str) -> Dict[str, Any]:
@@ -411,10 +472,7 @@ def handler(event, context):
                 revised = _coerce_resume_json(revised)
             except Exception:
                 pass
-            try:
-                _validate_resume_json(revised)
-            except Exception as ve:
-                return _json_response(400, {"ok": False, "error": str(ve)})
+            _try_validate_resume_json(revised)
             base_prefix = f"resume-jobs/{user_id}/{job_id}"
             outputs_prefix = f"{base_prefix}/outputs"
             key = f"{outputs_prefix}/tailored.json"
@@ -756,4 +814,38 @@ def handler(event, context):
 
     except Exception as e:
         return _json_response(400, {"ok": False, "error": str(e)})
+
+
+def _coerce_resume_json(data: Any) -> Dict[str, Any]:
+    result: Dict[str, Any] = {}
+    src = data if isinstance(data, dict) else {}
+    header = src.get("header") if isinstance(src.get("header"), dict) else {}
+    name = header.get("name") if isinstance(header.get("name"), str) else ""
+    title = header.get("title") if isinstance(header.get("title"), str) else ""
+    contact = header.get("contact") if isinstance(header.get("contact"), str) else ""
+    result["header"] = {"name": name, "title": title, "contact": contact}
+    result["summary"] = src.get("summary") if isinstance(src.get("summary"), str) else ""
+    skills = src.get("skills") if isinstance(src.get("skills"), list) else []
+    result["skills"] = [str(s) for s in skills if isinstance(s, (str, int, float))]
+    exp_list = src.get("experience") if isinstance(src.get("experience"), list) else []
+    norm_exp: List[Dict[str, Any]] = []
+    for e in exp_list:
+        if not isinstance(e, dict):
+            continue
+        item = dict(e)
+        bullets = item.get("bullets") if isinstance(item.get("bullets"), list) else []
+        item["bullets"] = [str(b) for b in bullets if isinstance(b, (str, int, float))]
+        norm_exp.append(item)
+    result["experience"] = norm_exp
+    edu_list = src.get("education") if isinstance(src.get("education"), list) else []
+    result["education"] = [e for e in edu_list if isinstance(e, dict)]
+    result["extras"] = src.get("extras") if isinstance(src.get("extras"), dict) else {}
+    return result
+
+
+def _try_validate_resume_json(data: Dict[str, Any]) -> None:
+    try:
+        _validate_resume_json(data)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Schema warning: %s", exc)
 
