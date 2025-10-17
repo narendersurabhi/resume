@@ -271,7 +271,10 @@ const Dashboard = ({ apiUrl, userId, userGroups }) => {
   const selectedJobDocxKey = selectedJob?.outputs?.render?.docx?.key;
   const selectedJobPdfKey = selectedJob?.outputs?.render?.pdf?.key;
   const shareToken = selectedJob?.shareToken;
-  
+  const shareUrl = shareToken && typeof window !== 'undefined'
+    ? `${window.location.origin}/?share=${shareToken}`
+    : null;
+
   const canRetry = useMemo(() => Boolean(selectedJob?.inputs?.resume && selectedJob?.inputs?.jobDesc), [selectedJob?.inputs?.resume, selectedJob?.inputs?.jobDesc]);
 
   return (
