@@ -351,18 +351,35 @@ def _call_openai(
     logger.debug("OpenAI raw response: %s", raw)
 
     text = ""
+    json_payload: Optional[Dict[str, Any]] = None
     for out in data.get("output", []) or []:
         for content in out.get("content", []) or []:
-            if content.get("type") in ("output_text", "text"):
+            ctype = content.get("type")
+            if ctype in ("output_text", "text"):
                 text += content.get("text", "")
+            elif ctype in ("output_json", "json"):
+                candidate = content.get("json")
+                if isinstance(candidate, dict):
+                    json_payload = candidate
+
+    if not json_payload and isinstance(data.get("output_json"), dict):
+        json_payload = data.get("output_json")  # type: ignore[assignment]
+
+    if not json_payload and data.get("response"):
+        for content in data["response"].get("content", []) or []:
+            ctype = content.get("type")
+            if ctype in ("output_text", "text"):
+                text += content.get("text", "")
+            elif ctype in ("output_json", "json"):
+                candidate = content.get("json")
+                if isinstance(candidate, dict):
+                    json_payload = candidate
+
+    if json_payload:
+        return json_payload
 
     if not text and "output_text" in data:
         text = data.get("output_text", "")
-
-    if not text and data.get("response"):
-        for content in data["response"].get("content", []) or []:
-            if content.get("type") in ("output_text", "text"):
-                text += content.get("text", "")
 
     if not text:
         logger.warning("OpenAI response lacked textual content; returning empty object")
