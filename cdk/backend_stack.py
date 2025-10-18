@@ -381,14 +381,14 @@ class BackendStack(Stack):
             authorizer=authorizer,
             authorization_type=apigateway.AuthorizationType.COGNITO,
         )
-        tailor_root.add_method(
-            "GET",
+        tailor_root.add_resource("sync").add_method(
+            "POST",
             apigateway.LambdaIntegration(tailor_fn),
             authorizer=authorizer,
             authorization_type=apigateway.AuthorizationType.COGNITO,
         )
-        tailor_root.add_resource("sync").add_method(
-            "POST",
+        tailor_root.add_resource("test").add_method(
+            "GET",
             apigateway.LambdaIntegration(tailor_fn),
             authorizer=authorizer,
             authorization_type=apigateway.AuthorizationType.COGNITO,
