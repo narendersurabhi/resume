@@ -283,7 +283,13 @@ const Dashboard = ({ apiUrl, userId, userGroups }) => {
     setPingBusy(true);
     setPingStatus(null);
     try {
-      const response = await apiGet(apiUrl, 'tailor/test', { params: { tenantId } });
+      const response = await apiGet(apiUrl, 'tailor/test', {
+        params: {
+          tenantId,
+          provider: retryProvider,
+          model: retryModel,
+        },
+      });
       const data = response.data || {};
       if (data.ok) {
         setPingStatus(`Success: ${data.provider}/${data.model} in ${data.latencyMs ?? '?'} ms${data.schemaUsed ? ' (custom schema)' : ''}`);
