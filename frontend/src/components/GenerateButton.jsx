@@ -16,13 +16,17 @@ const GenerateButton = ({
   userId,
   onGenerated,
   onAfterGenerate,
+  providerValue,
+  modelValue,
+  onProviderChange,
+  onModelChange,
 }) => {
   const [isQueueing, setQueueing] = useState(false);
   const [isGeneratingNow, setGeneratingNow] = useState(false);
   const [error, setError] = useState(null);
   const [message, setMessage] = useState(null);
-  const [provider, setProvider] = useState('openai');
-  const [model, setModel] = useState(DEFAULT_MODEL);
+  const [provider, setProvider] = useState(providerValue || 'openai');
+  const [model, setModel] = useState(modelValue || DEFAULT_MODEL);
   const [modelOptions, setModelOptions] = useState([DEFAULT_MODEL]);
   const [preview, setPreview] = useState(null);
 
@@ -54,6 +58,30 @@ const GenerateButton = ({
     loadModels(provider);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [provider]);
+
+  useEffect(() => {
+    if (providerValue && providerValue !== provider) {
+      setProvider(providerValue);
+    }
+  }, [providerValue]);
+
+  useEffect(() => {
+    if (modelValue && modelValue !== model) {
+      setModel(modelValue);
+    }
+  }, [modelValue]);
+
+  useEffect(() => {
+    if (onProviderChange) {
+      onProviderChange(provider);
+    }
+  }, [provider, onProviderChange]);
+
+  useEffect(() => {
+    if (onModelChange) {
+      onModelChange(model);
+    }
+  }, [model, onModelChange]);
 
   const buildPayload = () => {
     const hasResumeSelection = Boolean(selections?.resume?.key);

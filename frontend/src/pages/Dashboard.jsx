@@ -23,7 +23,6 @@ const Dashboard = ({ apiUrl, userId, userGroups }) => {
   // Retry UI state
   const [retryProvider, setRetryProvider] = useState('openai');
   const [retryModel, setRetryModel] = useState('gpt-5-mini');
-  const [retryModels, setRetryModels] = useState(['gpt-5-mini']);
   const [retryBusy, setRetryBusy] = useState(false);
   const [retryMsg, setRetryMsg] = useState(null);
   const [retryErr, setRetryErr] = useState(null);
@@ -412,6 +411,10 @@ const Dashboard = ({ apiUrl, userId, userGroups }) => {
             userId={userId}
             onGenerated={handleGenerated}
             onAfterGenerate={loadJobs}
+            providerValue={retryProvider}
+            modelValue={retryModel}
+            onProviderChange={setRetryProvider}
+            onModelChange={setRetryModel}
           />
           <div className="rounded-lg border border-slate-800 bg-slate-900 p-6 text-sm text-slate-100 shadow">
             <h3 className="text-base font-semibold text-white">Test Model Connection</h3>
