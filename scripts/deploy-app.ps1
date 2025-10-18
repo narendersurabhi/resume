@@ -32,7 +32,8 @@ try {
         --require-approval never `
         --parameters "ResumeBackendStack:DownloadImageTag=$Tag" `
         --parameters "ResumeBackendStack:GenerateImageTag=$Tag" `
-        --parameters "ResumeBackendStack:UploadImageTag=$Tag"
+        --parameters "ResumeBackendStack:UploadImageTag=$Tag" `
+        --parameters "ResumeBackendStack:RendererImageTag=$Tag"
 }
 catch {
     Write-Error $_

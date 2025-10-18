@@ -1,10 +1,11 @@
-"""Backend infrastructure stack for the resume tailoring platform."""
+﻿"""Backend infrastructure stack for the resume tailoring platform."""
 from aws_cdk import (
     CfnParameter,
     Duration,
     RemovalPolicy,
     Stack,
     CfnOutput,
+    Fn,
     aws_apigateway as apigateway,
     aws_dynamodb as dynamodb,
     aws_ecr as ecr,
@@ -12,6 +13,7 @@ from aws_cdk import (
     aws_lambda as lambda_,
     aws_logs as logs,
     aws_s3 as s3,
+    aws_cognito as cognito,
 )
 from constructs import Construct
 import os
@@ -99,6 +101,9 @@ class BackendStack(Stack):
         )
         upload_repo = ecr.Repository.from_repository_name(
             self, "UploadRepository", "resume-upload"
+        )
+        renderer_repo = ecr.Repository.from_repository_name(
+            self, "RendererRepository", "resume-renderer"
         )
 
         common_image_props = dict(
@@ -198,10 +203,227 @@ class BackendStack(Stack):
 
         api.root.add_resource("upload").add_method("POST", apigateway.LambdaIntegration(upload_function))
         api.root.add_resource("generate").add_method("POST", apigateway.LambdaIntegration(generate_function))
-        api.root.add_resource("download").add_method("GET", apigateway.LambdaIntegration(download_function))
+        # Download route is added after jobs bucket is defined
 
         self.api_url = api.url
         self.bucket = bucket
         self.table = table
 
         CfnOutput(self, "ApiUrl", value=self.api_url, export_name="ResumeApiUrl")
+
+        # --------------------
+        # Jobs store (DynamoDB + S3) for tailoring/rendering workflows
+        # --------------------
+        jobs_table = dynamodb.Table(
+            self,
+            "ResumeJobs",
+            partition_key=dynamodb.Attribute(name="jobId", type=dynamodb.AttributeType.STRING),
+            billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
+            removal_policy=RemovalPolicy.RETAIN,
+        )
+
+        jobs_bucket = s3.Bucket(
+            self,
+            "ResumeJobsBucket",
+            versioned=True,
+            block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
+            removal_policy=RemovalPolicy.RETAIN,
+            auto_delete_objects=False,
+            encryption=s3.BucketEncryption.S3_MANAGED,
+        )
+
+        # Tailor (generate) Lambda - zip-based to avoid impacting existing container builds
+        tailor_fn = lambda_.Function(
+            self,
+            "TailorHandler",
+            runtime=lambda_.Runtime.PYTHON_3_12,
+            handler="app.handler",
+            code=lambda_.Code.from_asset("lambdas/tailor_handler"),
+            environment={
+                "JOBS_BUCKET": jobs_bucket.bucket_name,
+                "JOBS_TABLE": jobs_table.table_name,
+                "MODEL_PROVIDER": "openai",
+                "MODEL_ID": "gpt-5-pro",
+                "OPENAI_PROJECT": "proj_rHvrAwby02gARWlZwjSSbHvV",
+                "ENABLE_LLM": "true",
+                "STORAGE_BUCKET": bucket.bucket_name,
+                "JOB_TIMEOUT_SECONDS": "600",
+                "METADATA_TABLE": table.table_name,
+            },
+            memory_size=512,
+            timeout=Duration.seconds(90),
+            log_retention=logs.RetentionDays.ONE_WEEK,
+        )
+
+        # Allow Tailor to read the OpenAI API key from Secrets Manager when stored at name 'openai/api-key'
+        tailor_fn.add_to_role_policy(
+            iam.PolicyStatement(
+                actions=["secretsmanager:GetSecretValue"],
+                resources=[
+                    f"arn:aws:secretsmanager:{self.region}:{self.account}:secret:openai/api-key-*",
+                ],
+            )
+        )
+
+        tailor_worker = lambda_.Function(
+            self,
+            "TailorWorker",
+            runtime=lambda_.Runtime.PYTHON_3_12,
+            handler="app.handler",
+            code=lambda_.Code.from_asset("lambdas/tailor_worker"),
+            environment={
+                "JOBS_BUCKET": jobs_bucket.bucket_name,
+                "JOBS_TABLE": jobs_table.table_name,
+                "MODEL_PROVIDER": "openai",
+                "MODEL_ID": "gpt-5-pro",
+                "OPENAI_PROJECT": "proj_rHvrAwby02gARWlZwjSSbHvV",
+                "ENABLE_LLM": "true",
+                "STORAGE_BUCKET": bucket.bucket_name,
+                "JOB_TIMEOUT_SECONDS": "600",
+                "METADATA_TABLE": table.table_name,
+            },
+            memory_size=512,
+            timeout=Duration.seconds(600),
+            log_retention=logs.RetentionDays.ONE_WEEK,
+        )
+
+        tailor_worker.add_to_role_policy(
+            iam.PolicyStatement(
+                actions=["secretsmanager:GetSecretValue"],
+                resources=[
+                    f"arn:aws:secretsmanager:{self.region}:{self.account}:secret:openai/api-key-*",
+                ],
+            )
+        )
+        tailor_worker.add_to_role_policy(
+            iam.PolicyStatement(
+                actions=["bedrock:InvokeModel"],
+                resources=[f"arn:aws:bedrock:{self.region}::foundation-model/openai.gpt-oss-120b-1:0"],
+            )
+        )
+
+        tailor_worker.grant_invoke(tailor_fn)
+        tailor_fn.add_environment("TAILOR_WORKER_FN", tailor_worker.function_name)
+        table.grant_read_data(tailor_fn)
+        table.grant_read_data(tailor_worker)
+
+        # Templates bucket for DOCX templates
+        templates_bucket = s3.Bucket(
+            self,
+            "ResumeTemplatesBucket",
+            versioned=True,
+            block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
+            removal_policy=RemovalPolicy.RETAIN,
+            auto_delete_objects=False,
+            encryption=s3.BucketEncryption.S3_MANAGED,
+        )
+
+        # Renderer image tag (built by pipeline and pushed to ECR)
+        renderer_image_tag = CfnParameter(
+            self,
+            "RendererImageTag",
+            type="String",
+            default="latest",
+            description="Tag for the renderer Lambda container image.",
+        )
+
+        # ECR-based renderer: no local Docker needed during CDK deploy
+        render_fn = lambda_.DockerImageFunction(
+            self,
+            "RenderContainer",
+            code=lambda_.DockerImageCode.from_ecr(
+                repository=renderer_repo,
+                tag_or_digest=renderer_image_tag.value_as_string,
+            ),
+            memory_size=1024,
+            timeout=Duration.seconds(60),
+            environment={
+                "JOBS_BUCKET": jobs_bucket.bucket_name,
+                "JOBS_TABLE": jobs_table.table_name,
+                "TEMPLATES_BUCKET": templates_bucket.bucket_name,
+                "STORAGE_BUCKET": bucket.bucket_name,
+            },
+            log_retention=logs.RetentionDays.ONE_WEEK,
+        )
+        templates_bucket.grant_read(render_fn)
+        bucket.grant_read(render_fn)
+
+        jobs_bucket.grant_read_write(tailor_fn)
+        jobs_bucket.grant_read_write(tailor_worker)
+        jobs_bucket.grant_read_write(render_fn)
+        # Download function needs read on jobs bucket, and env to switch presign bucket
+        jobs_bucket.grant_read(download_function)
+        download_function.add_environment("JOBS_BUCKET", jobs_bucket.bucket_name)
+        jobs_table.grant_read_write_data(tailor_fn)
+        jobs_table.grant_read_write_data(tailor_worker)
+        jobs_table.grant_read_write_data(render_fn)
+        # Allow tailor to read uploaded resumes/templates from the primary storage bucket
+        bucket.grant_read(tailor_fn)
+        bucket.grant_read(tailor_worker)
+
+        # API routes for tailoring and rendering
+        # Cognito authorizer using exported User Pool from AuthStack
+        user_pool = cognito.UserPool.from_user_pool_id(
+            self,
+            "ImportedUserPool",
+            Fn.import_value("ResumeUserPoolId"),
+        )
+        authorizer = apigateway.CognitoUserPoolsAuthorizer(
+            self,
+            "ResumeApiAuthorizer",
+            cognito_user_pools=[user_pool],
+        )
+
+        tailor_root = api.root.add_resource("tailor")
+        tailor_root.add_method(
+            "POST",
+            apigateway.LambdaIntegration(tailor_fn),
+            authorizer=authorizer,
+            authorization_type=apigateway.AuthorizationType.COGNITO,
+        )
+        tailor_root.add_resource("sync").add_method(
+            "POST",
+            apigateway.LambdaIntegration(tailor_fn),
+            authorizer=authorizer,
+            authorization_type=apigateway.AuthorizationType.COGNITO,
+        )
+        tailor_root.add_resource("test").add_method(
+            "GET",
+            apigateway.LambdaIntegration(tailor_fn),
+            authorizer=authorizer,
+            authorization_type=apigateway.AuthorizationType.COGNITO,
+        )
+        api.root.add_resource("render").add_method(
+            "POST",
+            apigateway.LambdaIntegration(render_fn),
+            authorizer=authorizer,
+            authorization_type=apigateway.AuthorizationType.COGNITO,
+        )
+
+        # Models listing (provider-aware)
+        api.root.add_resource("models").add_method(
+            "GET",
+            apigateway.LambdaIntegration(tailor_fn),
+            authorizer=authorizer,
+            authorization_type=apigateway.AuthorizationType.COGNITO,
+        )
+
+        # Jobs list and status
+        jobs_root = api.root.add_resource("jobs")
+        jobs_root.add_method(
+            "GET",
+            apigateway.LambdaIntegration(tailor_fn),
+            authorizer=authorizer,
+            authorization_type=apigateway.AuthorizationType.COGNITO,
+        )
+        jobs_res = jobs_root.add_resource("{jobId}")
+        jobs_res.add_method(
+            "GET",
+            apigateway.LambdaIntegration(tailor_fn),
+            authorizer=authorizer,
+            authorization_type=apigateway.AuthorizationType.COGNITO,
+        )
+
+        # Download route (after env/permissions wired)
+        api.root.add_resource("download").add_method("GET", apigateway.LambdaIntegration(download_function))
+

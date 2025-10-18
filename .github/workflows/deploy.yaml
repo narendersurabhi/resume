@@ -2,7 +2,7 @@ name: Deploy CDK
 
 on:
   push:
-    branches: [main]
+    branches: [feature/openai]
   workflow_dispatch: {}
 
 permissions:

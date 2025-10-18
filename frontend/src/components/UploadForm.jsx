@@ -1,25 +1,28 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import { apiPost } from '../lib/api.js';
 
 const categories = [
   { label: 'Approved Resume', value: 'approved' },
   { label: 'Style Template', value: 'template' },
   { label: 'Job Description', value: 'jobs' },
+  { label: 'JSON Schema', value: 'schema' },
 ];
 
-const UploadForm = ({ apiUrl, tenantId, onUploadComplete }) => {
+const UploadForm = ({ apiUrl, tenantId, userId, onUploadComplete }) => {
   const [selectedCategory, setSelectedCategory] = useState(categories[0].value);
   const [file, setFile] = useState(null);
   const [isUploading, setUploading] = useState(false);
   const [message, setMessage] = useState(null);
+  const isSchema = selectedCategory === 'schema';
 
   const toBase64 = (inputFile) =>
     new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.readAsDataURL(inputFile);
       reader.onload = () => {
-        const result = reader.result;
-        resolve(result.split(',')[1]);
+        const result = reader.result || '';
+        const [, encoded = ''] = String(result).split(',');
+        resolve(encoded);
       };
       reader.onerror = (error) => reject(error);
     });
@@ -32,8 +35,9 @@ const UploadForm = ({ apiUrl, tenantId, onUploadComplete }) => {
 
     try {
       const content = await toBase64(file);
-      const response = await axios.post(`${apiUrl}upload`, {
+      const response = await apiPost(apiUrl, 'upload', {
         tenantId,
+        userId,
         category: selectedCategory,
         fileName: file.name,
         content,
@@ -49,7 +53,8 @@ const UploadForm = ({ apiUrl, tenantId, onUploadComplete }) => {
       }
     } catch (error) {
       console.error('Upload failed', error);
-      setMessage('Upload failed. Check console for details.');
+      const apiMessage = error.response?.data?.error || error.message || 'Unknown error';
+      setMessage(`Upload failed: ${apiMessage}`);
     } finally {
       setUploading(false);
     }
@@ -79,6 +84,7 @@ const UploadForm = ({ apiUrl, tenantId, onUploadComplete }) => {
         <label className="block text-sm font-medium text-slate-300">File</label>
         <input
           type="file"
+          accept={isSchema ? '.json,.yaml,.yml,application/json,text/yaml' : undefined}
           className="mt-1 w-full rounded border border-dashed border-slate-600 bg-slate-800 p-3"
           onChange={(event) => setFile(event.target.files?.[0] ?? null)}
         />
@@ -89,7 +95,7 @@ const UploadForm = ({ apiUrl, tenantId, onUploadComplete }) => {
         disabled={!file || isUploading}
         className="w-full rounded bg-emerald-500 py-2 font-semibold text-slate-900 transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:bg-slate-700"
       >
-        {isUploading ? 'Uploadingâ€¦' : 'Upload'}
+        {isUploading ? 'Uploading…' : 'Upload'}
       </button>
 
       {message && <p className="text-sm text-slate-400">{message}</p>}

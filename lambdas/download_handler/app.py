@@ -11,6 +11,7 @@ import boto3
 s3 = boto3.client("s3")
 
 BUCKET_NAME = os.environ["BUCKET_NAME"]
+JOBS_BUCKET = os.getenv("JOBS_BUCKET", "")
 CF_DIST_ID = os.getenv("CF_DIST_ID")
 origin = os.getenv("FRONTEND_ORIGIN", "*")
 
@@ -37,10 +38,15 @@ def handler(event: Dict[str, Any], _context: Any) -> Dict[str, Any]:
         return _response(400, {"message": "Missing required 'key' parameter"})
 
     expires_in = int(params.get("expiresIn", 3600))
+    # Choose bucket: use jobs bucket for job artifacts, otherwise default uploads bucket
+    bucket = BUCKET_NAME
+    if key.startswith("resume-jobs/") and JOBS_BUCKET:
+        bucket = JOBS_BUCKET
+
     try:
         url = s3.generate_presigned_url(
             "get_object",
-            Params={"Bucket": BUCKET_NAME, "Key": key},
+            Params={"Bucket": bucket, "Key": key},
             ExpiresIn=expires_in,
         )
     except Exception as exc:  # noqa: BLE001

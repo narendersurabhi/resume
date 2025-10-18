@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["header", "summary", "skills", "experience", "education"],
+  "properties": {
+    "header": {
+      "type": "object",
+      "properties": {
+        "name": {"type": "string"},
+        "title": {"type": "string"},
+        "contact": {"type": "string"}
+      },
+      "additionalProperties": true
+    },
+    "summary": {"type": "string"},
+    "skills": {"type": "array", "items": {"type": "string"}},
+    "experience": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["company", "title", "start", "end", "bullets"],
+        "properties": {
+          "company": {"type": "string"},
+          "title": {"type": "string"},
+          "start": {"type": "string"},
+          "end": {"type": "string"},
+          "bullets": {"type": "array", "items": {"type": "string"}}
+        },
+        "additionalProperties": true
+      }
+    },
+    "education": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "school": {"type": "string"},
+          "degree": {"type": "string"},
+          "year": {"type": "string"}
+        },
+        "additionalProperties": true
+      }
+    },
+    "extras": {"type": "object"}
+  },
+  "additionalProperties": true
+}
