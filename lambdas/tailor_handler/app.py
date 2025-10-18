@@ -467,6 +467,45 @@ def handler(event, context):
         qs = event.get("queryStringParameters") or {}
         headers = {k.lower(): v for k, v in (event.get("headers") or {}).items()}
 
+        if http_method == "GET" and path.endswith("/tailor/test"):
+            try:
+                user_id_q = (claim_user or "anonymous").strip() or "anonymous"
+                tenant_id_q = qs.get("tenantId") or "demo-tenant"
+                req_provider = qs.get("provider")
+                req_model = qs.get("model")
+                provider, model = _choose_provider(req_provider, req_model)
+                schema_override = _load_user_schema(user_id_q, tenant_id_q)
+                start = time.time()
+                if provider == "openai":
+                    result = _call_openai(
+                        model,
+                        resume_text="Name: Test User\nExperience: Testing connectivity",
+                        job_desc="Respond with a minimal valid resume JSON",
+                        schema_override=schema_override,
+                    )
+                else:
+                    result = _call_bedrock(
+                        model,
+                        resume_text="Name: Test User\nExperience: Testing connectivity",
+                        job_desc="Respond with a minimal valid resume JSON",
+                    )
+                latency = int((time.time() - start) * 1000)
+                coerced = _coerce_resume_json(result)
+                _try_validate_resume_json(coerced)
+                return _json_response(
+                    200,
+                    {
+                        "ok": True,
+                        "provider": provider,
+                        "model": model,
+                        "latencyMs": latency,
+                        "schemaUsed": bool(schema_override),
+                    },
+                )
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("Tailor test endpoint failed: %s", exc)
+                return _json_response(503, {"ok": False, "error": str(exc)})
+
         # GET /models?provider=openai|bedrock -> list available models
         if http_method == "GET" and path.endswith("/models"):
             prov = (qs.get("provider") or "").lower()

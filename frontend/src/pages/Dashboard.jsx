@@ -27,6 +27,8 @@ const Dashboard = ({ apiUrl, userId, userGroups }) => {
   const [retryBusy, setRetryBusy] = useState(false);
   const [retryMsg, setRetryMsg] = useState(null);
   const [retryErr, setRetryErr] = useState(null);
+  const [pingBusy, setPingBusy] = useState(false);
+  const [pingStatus, setPingStatus] = useState(null);
 
   const fileInputRef = useRef();
   const templateFileInputRef = useRef();
@@ -277,6 +279,25 @@ const Dashboard = ({ apiUrl, userId, userGroups }) => {
 
   const canRetry = useMemo(() => Boolean(selectedJob?.inputs?.resume && selectedJob?.inputs?.jobDesc), [selectedJob?.inputs?.resume, selectedJob?.inputs?.jobDesc]);
 
+  const handleTestOpenAI = async () => {
+    setPingBusy(true);
+    setPingStatus(null);
+    try {
+      const response = await apiGet(apiUrl, 'tailor/test', { params: { tenantId } });
+      const data = response.data || {};
+      if (data.ok) {
+        setPingStatus(`Success: ${data.provider}/${data.model} in ${data.latencyMs ?? '?'} ms${data.schemaUsed ? ' (custom schema)' : ''}`);
+      } else {
+        setPingStatus(`Failed: ${data.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      const msg = error.response?.data?.error || error.message || 'Unknown error';
+      setPingStatus(`Failed: ${msg}`);
+    } finally {
+      setPingBusy(false);
+    }
+  };
+
   return (
     <main className="mx-auto flex max-w-6xl flex-col gap-8 p-6">
       <section className="rounded-lg border border-slate-800 bg-slate-900 p-6 shadow">
@@ -369,16 +390,33 @@ const Dashboard = ({ apiUrl, userId, userGroups }) => {
             }
           />
         </div>
-        <GenerateButton
-          apiUrl={apiUrl}
-          tenantId={tenantId}
-          selections={preparedSelections}
-          resumeText={resumeText}
-          jobDescription={jobDescription}
-          userId={userId}
-          onGenerated={handleGenerated}
-          onAfterGenerate={loadJobs}
-        />
+        <div className="space-y-4">
+          <GenerateButton
+            apiUrl={apiUrl}
+            tenantId={tenantId}
+            selections={preparedSelections}
+            resumeText={resumeText}
+            jobDescription={jobDescription}
+            userId={userId}
+            onGenerated={handleGenerated}
+            onAfterGenerate={loadJobs}
+          />
+          <div className="rounded-lg border border-slate-800 bg-slate-900 p-6 text-sm text-slate-100 shadow">
+            <h3 className="text-base font-semibold text-white">Test Model Connection</h3>
+            <p className="mt-2 text-xs text-slate-400">
+              Run a quick check to verify the active provider/model is responding.
+            </p>
+            <button
+              type="button"
+              onClick={handleTestOpenAI}
+              disabled={pingBusy}
+              className="mt-3 w-full rounded bg-slate-800 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:bg-slate-700 disabled:opacity-60"
+            >
+              {pingBusy ? 'Testing…' : 'Test OpenAI'}
+            </button>
+            {pingStatus && <p className="mt-2 text-xs text-slate-300">{pingStatus}</p>}
+          </div>
+        </div>
       </section>
 
       <section className="space-y-4">
