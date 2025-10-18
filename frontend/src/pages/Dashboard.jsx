@@ -409,9 +409,17 @@ const Dashboard = ({ apiUrl, userId, userGroups }) => {
           />
           <div className="rounded-lg border border-slate-800 bg-slate-900 p-6 text-sm text-slate-100 shadow">
             <h3 className="text-base font-semibold text-white">Test Model Connection</h3>
-            <p className="mt-2 text-xs text-slate-400">
-              Run a quick check to verify the active provider/model is responding.
-            </p>
+            <div className="mt-2">
+              <label className="block text-xs font-medium text-slate-300">
+                Test Prompt
+              </label>
+              <textarea
+                className="mt-1 w-full rounded border border-slate-700 bg-slate-800 p-2 text-xs text-slate-100"
+                rows={3}
+                value={pingPrompt}
+                onChange={(event) => setPingPrompt(event.target.value)}
+              />
+            </div>
             <button
               type="button"
               onClick={handleTestOpenAI}
@@ -420,6 +428,11 @@ const Dashboard = ({ apiUrl, userId, userGroups }) => {
             >
               {pingBusy ? 'Testing…' : 'Test OpenAI'}
             </button>
+            {pingResult && (
+              <pre className="mt-2 max-h-48 overflow-auto rounded border border-slate-800 bg-slate-950/80 p-3 text-[11px] text-slate-300">
+{JSON.stringify(pingResult, null, 2)}
+              </pre>
+            )}
             {pingStatus && <p className="mt-2 text-xs text-slate-300">{pingStatus}</p>}
           </div>
         </div>
@@ -645,6 +658,7 @@ const Dashboard = ({ apiUrl, userId, userGroups }) => {
 };
 
 export default Dashboard;
+
 
 
 

@@ -475,19 +475,21 @@ def handler(event, context):
                 req_model = qs.get("model")
                 provider, model = _choose_provider(req_provider, req_model)
                 schema_override = _load_user_schema(user_id_q, tenant_id_q)
+                resume_text = qs.get("resumeText") or "Name: Test User\nExperience: Testing connectivity"
+                job_desc = qs.get("jobDescription") or "Reply with JSON containing summary and skills about testing."
                 start = time.time()
                 if provider == "openai":
                     result = _call_openai(
                         model,
-                        resume_text="Name: Test User\nExperience: Testing connectivity",
-                        job_desc="Respond with a minimal valid resume JSON",
+                        resume_text=resume_text,
+                        job_desc=job_desc,
                         schema_override=schema_override,
                     )
                 else:
                     result = _call_bedrock(
                         model,
-                        resume_text="Name: Test User\nExperience: Testing connectivity",
-                        job_desc="Respond with a minimal valid resume JSON",
+                        resume_text=resume_text,
+                        job_desc=job_desc,
                     )
                 latency = int((time.time() - start) * 1000)
                 coerced = _coerce_resume_json(result)
@@ -500,6 +502,7 @@ def handler(event, context):
                         "model": model,
                         "latencyMs": latency,
                         "schemaUsed": bool(schema_override),
+                        "result": coerced,
                     },
                 )
             except Exception as exc:  # noqa: BLE001
