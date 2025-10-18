@@ -29,6 +29,8 @@ const Dashboard = ({ apiUrl, userId, userGroups }) => {
   const [retryErr, setRetryErr] = useState(null);
   const [pingBusy, setPingBusy] = useState(false);
   const [pingStatus, setPingStatus] = useState(null);
+  const [pingResult, setPingResult] = useState(null);
+  const [pingPrompt, setPingPrompt] = useState('How are you?');
 
   const fileInputRef = useRef();
   const templateFileInputRef = useRef();
@@ -282,16 +284,20 @@ const Dashboard = ({ apiUrl, userId, userGroups }) => {
   const handleTestOpenAI = async () => {
     setPingBusy(true);
     setPingStatus(null);
+    setPingResult(null);
     try {
       const response = await apiGet(apiUrl, 'tailor/test', {
         params: {
           tenantId,
           provider: retryProvider,
           model: retryModel,
+          resumeText: 'Name: Sample Candidate\nExperience: Verifying connectivity',
+          jobDescription: pingPrompt || 'Reply with a brief status update about testing.',
         },
       });
       const data = response.data || {};
       if (data.ok) {
+        setPingResult(data.result ?? null);
         setPingStatus(`Success: ${data.provider}/${data.model} in ${data.latencyMs ?? '?'} ms${data.schemaUsed ? ' (custom schema)' : ''}`);
       } else {
         setPingStatus(`Failed: ${data.error || 'Unknown error'}`);
@@ -426,7 +432,7 @@ const Dashboard = ({ apiUrl, userId, userGroups }) => {
               disabled={pingBusy}
               className="mt-3 w-full rounded bg-slate-800 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:bg-slate-700 disabled:opacity-60"
             >
-              {pingBusy ? 'Testing…' : 'Test OpenAI'}
+              {pingBusy ? 'Testing...' : 'Test OpenAI'}
             </button>
             {pingResult && (
               <pre className="mt-2 max-h-48 overflow-auto rounded border border-slate-800 bg-slate-950/80 p-3 text-[11px] text-slate-300">
@@ -658,6 +664,8 @@ const Dashboard = ({ apiUrl, userId, userGroups }) => {
 };
 
 export default Dashboard;
+
+
 
 
 
